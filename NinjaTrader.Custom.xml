@@ -1180,13 +1180,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
@@ -2493,13 +2493,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
@@ -3816,13 +3816,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
