@@ -130,7 +130,8 @@ namespace NinjaTrader.Strategy
 		
 		
 		
-		private string testString = "Test";
+		private int startTimeTrading = 91500;
+		private int endTimeTrading = 204500;
 		
 		
         /// <summary>
@@ -172,20 +173,35 @@ namespace NinjaTrader.Strategy
 			return firstBar != secondBar;
 		}
 		
+		private bool isTimeTrading(int startTimeTrading, int endTimeTrading){
+			if(ToTime(Time[0]) >= startTimeTrading && ToTime(Time[0]) <= endTimeTrading)
+				return true;
+			else
+				return false;
+			
+		}
 		
         protected override void OnBarUpdate()
         {	
-
+			
 			if(BarsInProgress == 0){
-				OnBarUpdateMain();
+				if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
+				{
+					OnBarUpdateMain();
+					Print(Time[0].ToString());
+				}
+				
 			}
 			 if(BarsInProgress == 1){	
-				double openPrice = Opens[1][0];
-			
-				_lastPrice = Price;
-				Price = openPrice;
+				if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
+				{
+					double openPrice = Opens[1][0];
+				
+					_lastPrice = Price;
+					Price = openPrice;
 
-				BuyOrSell(Price, _lastPrice);
+					BuyOrSell(Price, _lastPrice);
+				}
 			}
         }
 		
@@ -776,7 +792,7 @@ namespace NinjaTrader.Strategy
         }
 		
 		[Description("Ордера")]
-        [Category("OrderParameters")]
+        [GridCategory("OrderParameters")]
         public int ProfitTarget
         {
           get{return profitTarget;}
@@ -784,12 +800,31 @@ namespace NinjaTrader.Strategy
         }
 		
 		[Description("Ордера")]
-        [Category("OrderParameters")]
+        [GridCategory("OrderParameters")]
         public int StopLoss
         {
           get{return stopLoss;}
           set{stopLoss = value;}
         }
+		
+		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
+        [GridCategory("Worked Time")]
+        public int StartTimeTrading
+        {
+          get{return startTimeTrading;}
+          set{startTimeTrading = value;}
+        }
+		
+		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
+        [GridCategory("Worked Time")]
+        public int EndTimeTrading
+        {
+          get{return endTimeTrading;}
+          set{endTimeTrading = value;}
+        }
+		
+		
+		
 		
 		
 		private double Price {
