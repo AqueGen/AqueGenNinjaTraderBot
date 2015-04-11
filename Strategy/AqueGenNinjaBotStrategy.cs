@@ -194,7 +194,7 @@ namespace NinjaTrader.Strategy
 				return;
 
 			barIndex++;
-			Print("------------------");
+			Print("-------------------");
 			
 			RSIUpdateOnBar();
 			ZigZagUpdateOnBar();
