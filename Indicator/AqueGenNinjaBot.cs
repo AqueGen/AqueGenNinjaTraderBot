@@ -162,7 +162,7 @@ namespace NinjaTrader.Indicator
 			up					= new DataSeries(this);
 			
 			//Add(PeriodType.Tick, 1);
-			Add(PeriodType.Minute, 5);
+			//Add(PeriodType.Minute, 5);
 			
 			//Add(new Plot(Color.Orange, "SMA"));
 			
@@ -173,13 +173,12 @@ namespace NinjaTrader.Indicator
         /// </summary>
         protected override void OnBarUpdate()
     	{
+			if(CurrentBar < 20)
+				return;
 			
 			if(BarsInProgress == 0){
-				if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
-				{
-					OnBarUpdateMain();
-					//Print(Time[0].ToString());
-				}
+				OnBarUpdateMain();
+				//Print(Time[0].ToString());
 				
 			}
 			

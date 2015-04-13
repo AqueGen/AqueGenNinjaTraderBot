@@ -30,9 +30,6 @@ namespace NinjaTrader.Strategy
 		private double _price = 0;
 		private double _lastPrice = 0;
 
-		private int _period = 10;	
-		
-
 		
 		private int _waitBarsAfterChangeTrend = 5;
 		private int _waitBarsAfterCloseOrder = 10;
@@ -46,10 +43,6 @@ namespace NinjaTrader.Strategy
 		
 		private double startOrderPrice = 0;
 		
-		private string	atmStrategyId		= string.Empty;
-		private string	orderId				= string.Empty;
-		
-		private string openedOrderId;
 		
 		private bool isFoundTrend = false;
 		
@@ -92,29 +85,17 @@ namespace NinjaTrader.Strategy
 		
 		
 		
-		private bool isDiapasoned = true;
+		private bool isDiapasoned = false;
 		
 		private int periodOfCalculate = 0;
 
 		
-		//RSI
-		private DataSeries	avgUp;
-		private DataSeries	avgDown;
-		private DataSeries	down;
-		private int	period	= 10;
-		private int	smooth	= 1;
-		private DataSeries					up;
+		//Analog RSI
 		
 		private bool isCanBuyRSI = false;
 		private bool isCanSellRSI = false;
 		
-		private int _lowRSI = 40;
-		private int _highRSI = 60;
-		
-		private double rsiAvg;
-		private double rsi;
-		
-		
+
 		private bool isChangePeriod = false;
 		
 		//Diapason
@@ -144,6 +125,7 @@ namespace NinjaTrader.Strategy
 		private int smaPeriod = 100;
 		private double  smaLine = 0;
 		
+		
         /// <summary>
         /// This method is used to configure the strategy and is called once before any strategy method is called.
         /// </summary>
@@ -162,18 +144,14 @@ namespace NinjaTrader.Strategy
             //Overlay				= true;
 			//PaintPriceMarkers	= false;
 			
-			//RSI
-			avgUp				= new DataSeries(this);
-			avgDown				= new DataSeries(this);
-			down				= new DataSeries(this);
-			up					= new DataSeries(this);
 			
 			
 			SetStopLoss(StopLoss);
 			SetProfitTarget(ProfitTarget);
 			
+			//Add(PeriodType.Minute, MainMinuteTimeFrame);
 			Add(PeriodType.Tick, 1);
-			Add(PeriodType.Minute, 5);
+			Add(PeriodType.Day, 1);
 			
 			
         }
@@ -186,39 +164,31 @@ namespace NinjaTrader.Strategy
 			return firstBar != secondBar;
 		}
 		
-		private bool isTimeTrading(int startTimeTrading, int endTimeTrading){
-			if(ToTime(Time[0]) >= startTimeTrading && ToTime(Time[0]) <= endTimeTrading)
-				return true;
-			else
-				return false;
-		}
 		
         protected override void OnBarUpdate()
         {	
+			if(CurrentBar < SMAPeriod || CurrentBars[2] < 5)
+				return;
 			
 			if(BarsInProgress == 0){
-				if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
-				{
-					OnBarUpdateMain();
-					//Print(Time[0].ToString());
-				}
-				
+
+				OnBarUpdateMain();
+				Print(Time[0].ToString());
 			}
 			
 			 if(BarsInProgress == 1){	
-				if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
-				{
-					double openPrice = Opens[1][0];
-				
-					_lastPrice = Price;
-					Price = openPrice;
+				double openPrice = Opens[1][0];
+			
+				_lastPrice = Price;
+				Price = openPrice;
 
-					BuyOrSell(Price, _lastPrice);
-				}
+				BuyOrSell(Price, _lastPrice);
+				
 			}
 			
 			if(BarsInProgress == 2){
 				
+
 				double firstValot = Highs[2][0] - Lows[2][0];
 				double secondValot = Highs[2][1] - Lows[2][1];
 				double thirtValot = Highs[2][2] - Lows[2][2];
@@ -230,7 +200,7 @@ namespace NinjaTrader.Strategy
 				Print("-----------");
 				Print("middleValot " + middleValot);
 
-				OnBarUpdateSMA();
+				smaLine = OnBarUpdateSMA();
 				
 				Print("SMA Line -> " + smaLine);
 				
@@ -240,31 +210,32 @@ namespace NinjaTrader.Strategy
 				Print("lowLineRSIAnalog " + lowLineRSIAnalog);
 				Print("highLineRSIAnalog " + highLineRSIAnalog);
 				
-				Print("Day bar -> " + Opens[2][1]);
+				Print("Day bar -> " + Closes[2][0]);
 				Print(Time[0].ToString());
 			}
 			
         }
 		
-		private void OnBarUpdateSMA(){
+		private double OnBarUpdateSMA(){
+			double sma = 0;
 			if (CurrentBar == 0){}
 				//Value.Set(Input[0]);
 			else
 			{
-				double last = Close[1] * Math.Min(CurrentBar, Period);
-
-				if (CurrentBar >= Period){
-					smaLine = ((last + Close[0] - Close[Period]) / Math.Min(CurrentBar, Period));
+				double last = Close[1] * Math.Min(CurrentBar, SMAPeriod);
+				
+				if (CurrentBar >= SMAPeriod){
+					sma = ((last + Close[0] - Close[SMAPeriod]) / Math.Min(CurrentBar, SMAPeriod));
 				}
 				else
-					smaLine = ((last + Close[0]) / (Math.Min(CurrentBar, Period) + 1));
+					sma = ((last + Close[0]) / (Math.Min(CurrentBar, SMAPeriod) + 1));
 			}
+			return sma;
 		}
 		
 		
 		private void OnBarUpdateMain(){
-			if(CurrentBar < 20)
-				return;
+
 
 			barIndex++;
 			Print("-------------------");
@@ -718,9 +689,9 @@ namespace NinjaTrader.Strategy
 					}
 				}
 				Print("Delete -> " + levelName);
-				Print("firstLevelPrice -> " + firstLevelPrice);
-				Print("secondLevelPrice -> " + secondLevelPrice);
-				Print("thirdLevelPrice -> " + thirdLevelPrice);
+				//Print("firstLevelPrice -> " + firstLevelPrice);
+				//Print("secondLevelPrice -> " + secondLevelPrice);
+				//Print("thirdLevelPrice -> " + thirdLevelPrice);
 			}
 		}
 		
@@ -734,26 +705,10 @@ namespace NinjaTrader.Strategy
 		
         #region Properties	
 		
+		
 
-			/*	
-		[Description("Установить нижний уровень RSA")]
-		[GridCategory("_RSI")]
-		public int LowRSI
-		{
-			get{return _lowRSI;}
-			set{_lowRSI = value;}
-		}
 		
-		[Description("Установить нижний уровень RSA")]
-		[GridCategory("_RSI")]
-		public int HighRSI
-		{
-			get{return _highRSI;}
-			set{_highRSI = value;}
-		}
-		*/
-		
-		[Description("Is 3 diapasone in zigzag")]
+		[Description("If true - 3 diapasone in zigzag")]
 		[GridCategory("Diapasone")]
 		public bool IsDiapasoned
 		{
@@ -777,24 +732,7 @@ namespace NinjaTrader.Strategy
 			set{_rightZigZag = value;}
 		}
 
-		
-		
-		[Description("Установить период подсчёта")]
-        [GridCategory("Analog RSI")]
-        public int Period
-        {
-            get { return _period; }
-            set { _period = Math.Max(1, value); }
-        }
-	/*
-		[Description("Установить степень сглаживания. Чем меньше тем ближе линии друг к другу.")]
-		[GridCategory("_RSI")]
-		public int Smooth
-		{
-			get { return smooth; }
-			set { smooth = Math.Max(1, value); }
-		}
-		*/
+
  		[Description("Ожидание свечек после закрытия ордера")]
         [Category("_Time Out")]
         public int WaitBarsAfterCloseOrder 
@@ -820,14 +758,7 @@ namespace NinjaTrader.Strategy
           set{firstDiapason = value;}
         }
 		
-		/*[Description("Диапазон в %")]
-        [Category("Diapason")]
-        public int SecondDiapason 
-        {
-          get{return Convert.ToInt32(100/secondDiapason);}
-          set{secondDiapason = value;}
-        }
-		*/
+
 		[Description("Диапазон в %")]
         [Category("Diapason")]
         public int ThirtDiapason 
@@ -898,21 +829,6 @@ namespace NinjaTrader.Strategy
           set{stopLoss = value;}
         }
 		
-		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
-        [GridCategory("Worked Time")]
-        public int StartTimeTrading
-        {
-          get{return startTimeTrading;}
-          set{startTimeTrading = value;}
-        }
-		
-		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
-        [GridCategory("Worked Time")]
-        public int EndTimeTrading
-        {
-          get{return endTimeTrading;}
-          set{endTimeTrading = value;}
-        }
 		
 		[Description("Numbers of bars used for calculations")]
 		[GridCategory("SMA Parameters")]
