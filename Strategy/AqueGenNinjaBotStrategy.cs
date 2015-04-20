@@ -10,6 +10,8 @@ using NinjaTrader.Data;
 using NinjaTrader.Indicator;
 using NinjaTrader.Gui.Chart;
 using NinjaTrader.Strategy;
+using System.Collections.Generic;
+
 #endregion
 
 // This namespace holds all strategies and is required. Do not change it.
@@ -29,22 +31,12 @@ namespace NinjaTrader.Strategy
 		
 		private double _price = 0;
 		private double _lastPrice = 0;
-
-		
-		private int _waitBarsAfterChangeTrend = 5;
-		private int _waitBarsAfterCloseOrder = 10;
-      	private bool _isActivateTimeOut = false;
-		
-      	private int indexBarAfterCloseOrder = 0;
-		private int indexBarAfterChangeTrend = 0;
-      
+ 
 	
 		private bool isOrderPresent = false;
 		
 		private double startOrderPrice = 0;
 		
-		
-		private bool isFoundTrend = false;
 		
       	private int barIndex = 0;
       	private int singleBarIndex = 0;
@@ -71,9 +63,8 @@ namespace NinjaTrader.Strategy
 		private int endBar = 0;
 		
 		private bool isTrendOnPeriodDown;
-		private double firstLevelPrice = 0;
-		private double secondLevelPrice = 0;
-		private double thirdLevelPrice = 0;
+		private double sellLevelPrice = 0;
+		private double buyLevelPrice = 0;
 		
 		private int highBar = 0;
 		private int lowBar = 0;
@@ -225,7 +216,6 @@ namespace NinjaTrader.Strategy
 			barIndex++;
 			Print("-------------------");
 			
-			//RSIUpdateOnBar();
 			ZigZagUpdateOnBar();
 			
 			if(lowBarPeriod == 0 || highBarPeriod == 0)
@@ -252,101 +242,30 @@ namespace NinjaTrader.Strategy
 			Print("StartPeriod -> " + startBar);
 			Print("EndPeriod -> " + endBar);
 			
-			int firstDiapasonEnd = startBar + GetProcentValue(periodOfCalculate, FirstDiapason);
-			int thirtDiapasoneStart = endBar - GetProcentValue(periodOfCalculate, ThirtDiapason);
 			
-			double firstDiapasoneApex;
-			double thirtDiapasoneApex;
-			if(isDiapasoned){
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						//firstDiapasoneApex = GetApex(true, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(false, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
-						
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(true, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, thirtDiapasoneStart, endBar);
-						
-					}
-					else{
-						//firstDiapasoneApex = GetApex(false, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(true, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
-						
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(false, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, thirtDiapasoneStart, endBar);
-					}
-					isChangePeriod = false;
-					//firstLevelPrice = GetAverageBetweenLevel(firstDiapasoneApex, firstLevelPrice, FirstDiapasonPriceDifferent);
-					//thirdLevelPrice = GetAverageBetweenLevel(thirtDiapasoneApex, thirdLevelPrice, ThirtDiapasonPriceDifferent);
+			if(startBar < endBar && isChangePeriod){
+				if(isTrendOnPeriodDown){
+					sellLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
+					buyLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
 				}
+				else{
+					sellLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
+					buyLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
+				}
+				isChangePeriod = false;
 			}
-			else{
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
-					}
-					else{
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
-					}
-					isChangePeriod = false;
-				}
 			
-			}
+			
 				
-			Print("firstLevelPrice -> " + firstLevelPrice);
-			Print("secondLevelPrice -> " + secondLevelPrice);
-			Print("thirdLevelPrice -> " + thirdLevelPrice);
+			Print("firstLevelPrice -> " + sellLevelPrice);
+			Print("thirdLevelPrice -> " + buyLevelPrice);
 		}
 		
-		
-		
-		
-		/*private double GetAverageBetweenLevel(double apex, double level, double priceDifferent){
-			if(Math.Abs((apex * TickSize) - (level * TickSize)) > priceDifferent)
-				return Math.Round((apex + level) / 2, 1);
-			else
-				return level;
-		}*/
 		
 		private int GetProcentValue(double value, int procent){
 			return Convert.ToInt32((value/100) * procent);
 		}
-		/*
-		private double GetApex(bool isFoundLowPriceOnBar, int startBar, int endBar){
-			
-			double low = Low[CurrentBar - startBar];
-			double high = High[CurrentBar - startBar];
-			int start = CurrentBar - startBar;
-			int end = CurrentBar - endBar;
-
-			for(;start > end; start--){
-				if(isFoundLowPriceOnBar){
-					if(low > Low[start]){
-						low = Low[start];
-					}
-				}
-				else{
-					if(high < High[start]){
-						high = High[start];
-					}
-				}
-			}
-			
-			if(isFoundLowPriceOnBar)
-				return low;
-			else
-				return high;
-		}
-		*/
+		
 		private double GetLowOrHighPriceOfBar(bool isFoundLowPriceOnBar, int startBar, int endBar){
 
 			double low = Low[CurrentBar - startBar];
@@ -372,63 +291,7 @@ namespace NinjaTrader.Strategy
 			else
 				return high;
 		}
-		/*
-		#region RSI
-		private void RSIUpdateOnBar(){
-			if (CurrentBar == 0)
-			{
-				down.Set(0);
-				up.Set(0);
-
-                if (Period < 3)
-                    //Avg.Set(50);
-				return;
-			}
-
-			down.Set(Math.Max(Input[1] - Input[0], 0));
-			up.Set(Math.Max(Input[0] - Input[1], 0));
-
-			if ((CurrentBar + 1) < Period) 
-			{
-				if ((CurrentBar + 1) == (Period - 1))
-					//Avg.Set(50);
-				return;
-			}
-
-			if ((CurrentBar + 1) == Period) 
-			{
-				// First averages 
-				avgDown.Set(SMA(down, Period)[0]);
-				avgUp.Set(SMA(up, Period)[0]);
-			}  
-			else 
-			{
-				// Rest of averages are smoothed
-				avgDown.Set((avgDown[1] * (Period - 1) + down[0]) / Period);
-				avgUp.Set((avgUp[1] * (Period - 1) + up[0]) / Period);
-			}
-
-		 	rsi	  = avgDown[0] == 0 ? 100 : 100 - 100 / (1 + avgUp[0] / avgDown[0]);
-			rsiAvg = (2.0 / (1 + Smooth)) * rsi + (1 - (2.0 / (1 + Smooth))) * rsiAvg;
-			
-			if((rsiAvg < HighRSI && rsi < HighRSI) && (rsiAvg > LowRSI && rsi > LowRSI)){
-				isCanSellRSI = false;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg > HighRSI && rsi > HighRSI){
-				isCanSellRSI = true;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg < LowRSI && rsi < LowRSI){
-				isCanSellRSI = false;
-				isCanBuyRSI = true;
-			}
-
-			//Avg.Set(rsiAvg);
-			//Value.Set(rsi);
-		}
-		#endregion
-		*/
+		
 		#region ZigZag
 		private void ZigZagUpdateOnBar(){
 		if (CurrentBar < 2) // need 3 bars to calculate Low/High
@@ -610,75 +473,42 @@ namespace NinjaTrader.Strategy
 
 			if (Position.MarketPosition == MarketPosition.Flat)
 			{
-				if(isTrendOnPeriodDown){
-					if(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice") 
-							&& (price < lowLineRSIAnalog)
-							//&& isCanBuyRSI
-						){
-						EnterLong("BuyOrder");
-						Print("OrderAction.Buy");
-					} else
-					if((IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") || IsPriceInOrderPeriod(price, lastPrice, secondLevelPrice, "secondLevelPrice"))
-					//if(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice")
-						&& (price > highLineRSIAnalog)
-							//&& isCanSellRSI
-						){
-						EnterShort("SellOrder");
-						Print("OrderAction.Sell");
-					}
-				}
-				else{
-					if((IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") || IsPriceInOrderPeriod(price, lastPrice, secondLevelPrice, "secondLevelPrice")) 
-					//if(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") 
+
+				if(IsPriceInOrderPeriod(price, lastPrice, buyLevelPrice, "buyLevelPrice") 
 						&& (price < lowLineRSIAnalog)
-							//&& isCanBuyRSI
-						){	
-						EnterLong("BuyOrder");
-						Print("OrderAction.Buy");
-					} else
-					if(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice") 
-							&& (price > highLineRSIAnalog)
-							//&& isCanSellRSI
-						){
-						EnterShort("SellOrder");
-						Print("OrderAction.Sell");
-					}
+						//&& isCanBuyRSI
+					){
+					EnterLong("BuyOrder");
+					Print("OrderAction.Buy");
+				} else
+				if(IsPriceInOrderPeriod(price, lastPrice, sellLevelPrice, "sellLevelPrice")
+					&& (price > highLineRSIAnalog)
+						//&& isCanSellRSI
+					){
+					EnterShort("SellOrder");
+					Print("OrderAction.Sell");
 				}
+				
+				
 			}
 			
-			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice"), "firstLevelPrice");
-			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, secondLevelPrice, "secondLevelPrice"), "secondLevelPrice");
-			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice"), "thirdLevelPrice");
-
-			//Print("firstLevelPrice -> " + firstLevelPrice);
-			//Print("secondLevelPrice -> " + secondLevelPrice);
-			//Print("thirdLevelPrice -> " + thirdLevelPrice);
-			
-			//Print("=====================");
-			
-				
+			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, sellLevelPrice, "sellLevelPrice"), "sellLevelPrice");
+			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, buyLevelPrice, "buyLevelPrice"), "buyLevelPrice");					
 		}
 		
 		private void DeleteLevelPrice(bool isPriceInOrderPeriod, string levelName){
 			if(isPriceInOrderPeriod){
 				switch(levelName){
-					case("firstLevelPrice"):{
-						firstLevelPrice = 0;
+					case("sellLevelPrice"):{
+						sellLevelPrice = 0;
 						break;
 					}
-					case("secondLevelPrice"):{
-						secondLevelPrice = 0;
-						break;
-					}
-					case("thirdLevelPrice"):{
-						thirdLevelPrice = 0;
+					case("buyLevelPrice"):{
+						buyLevelPrice = 0;
 						break;
 					}
 				}
 				Print("Delete -> " + levelName);
-				//Print("firstLevelPrice -> " + firstLevelPrice);
-				//Print("secondLevelPrice -> " + secondLevelPrice);
-				//Print("thirdLevelPrice -> " + thirdLevelPrice);
 			}
 		}
 		
@@ -690,19 +520,47 @@ namespace NinjaTrader.Strategy
 				return false;
 		}
 		
-        #region Properties	
 		
+		public class ZigZagDictionary{
 		
+			private Dictionary<DateTime, double> highLevelDictionary;
+			private Dictionary<DateTime, double> lowLevelDictionary;
+		
+			private DateTime ZigZagDateTime{get;set;}
+			
+			private double LastHighLevel{get;set;}
+			private double LastLowLevel{get;set;}
+			
+			public ZigZagDictionary(DateTime dateTime){
+				ZigZagDateTime = dateTime;
 
+				highLevelDictionary = new Dictionary<DateTime, double>();
+				lowLevelDictionary = new Dictionary<DateTime, double>();
+			}
+			
+			public void AddHigh(DateTime date, double highLevel){
+				LastHighLevel = highLevel;
+				highLevelDictionary.Add(date, highLevel);
+			}
+			
+			public void AddLow(DateTime date, double lowLevel){
+				LastLowLevel = lowLevel;
+				lowLevelDictionary.Add(date, lowLevel);
+			}
+		}	
 		
-		[Description("If true - 3 diapasone in zigzag")]
-		[GridCategory("Diapasone")]
-		public bool IsDiapasoned
-		{
-			get{return isDiapasoned;}
-			set{isDiapasoned = value;}
+		
+		public class Node<T>{
+			
+			public Node(){}
+		
 		}
 		
+		
+		
+        #region Properties	
+		
+			
 		[Description("Установить отступ от крайне левой точки ZigZag")]
 		[GridCategory("_ZigZag")]
 		public int LeftZigZag
@@ -719,58 +577,6 @@ namespace NinjaTrader.Strategy
 			set{_rightZigZag = value;}
 		}
 
-
- 		[Description("Ожидание свечек после закрытия ордера")]
-        [Category("_Time Out")]
-        public int WaitBarsAfterCloseOrder 
-        {
-           get{return _waitBarsAfterCloseOrder;}
-           set{_waitBarsAfterCloseOrder = value;}
-        }
-	
-      
-        [Description("Активация таймаута")]
-        [Category("_Time Out")]
-        public bool IsActivateTimeOut 
-        {
-          get{return _isActivateTimeOut;}
-          set{_isActivateTimeOut = value;}
-        }
-		
-		[Description("Диапазон в %")]
-        [Category("Diapason")]
-        public int FirstDiapason 
-        {
-          get{return firstDiapason;}
-          set{firstDiapason = value;}
-        }
-		
-
-		[Description("Диапазон в %")]
-        [Category("Diapason")]
-        public int ThirtDiapason 
-        {
-          get{return thirtDiapason;}
-          set{thirtDiapason = value;}
-        }
-		
-		[Description("Разница цены")]
-        [Category("Diapason")]
-        public double FirstDiapasonPriceDifferent
-        {
-          get{return firstDiapasonPriceDifferent;}
-          set{firstDiapasonPriceDifferent = value;}
-        }
-		
-		[Description("Разница цены")]
-        [Category("Diapason")]
-        public double ThirtDiapasonPriceDifferent
-        {
-          get{return thirtDiapasonPriceDifferent;}
-          set{thirtDiapasonPriceDifferent = value;}
-        }
-		
-		
        
 		[Description("Deviation in percent or points regarding on the deviation type")]
         [GridCategory("_ZigZag")]
@@ -840,11 +646,6 @@ namespace NinjaTrader.Strategy
 			get { return procentFromMiddleValot; }
 			set { procentFromMiddleValot = Math.Max(1, value); }
 		}
-		
-		
-		
-		
-		
 		
 		
 		private double Price {
