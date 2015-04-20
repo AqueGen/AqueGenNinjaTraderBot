@@ -521,17 +521,17 @@ namespace NinjaTrader.Strategy
 		}
 		
 		
-		public class ZigZagDictionary{
+		public class DailyZigZag{
 		
 			private Dictionary<DateTime, double> highLevelDictionary;
 			private Dictionary<DateTime, double> lowLevelDictionary;
 		
-			private DateTime ZigZagDateTime{get;set;}
+			public DateTime ZigZagDateTime{get;set;}
 			
-			private double LastHighLevel{get;set;}
-			private double LastLowLevel{get;set;}
+			public double LastHighLevel{get;set;}
+			public double LastLowLevel{get;set;}
 			
-			public ZigZagDictionary(DateTime dateTime){
+			public DailyZigZag(DateTime dateTime){
 				ZigZagDateTime = dateTime;
 
 				highLevelDictionary = new Dictionary<DateTime, double>();
@@ -552,13 +552,13 @@ namespace NinjaTrader.Strategy
 		
 		public class Node{
 			
-			public Node NextZigZagDictionary{get;set;}
-			public Node PreviusZigZagDictionary{get;set;}
+			public Node Next{get;set;}
+			public Node Previous{get;set;}
 			
-			public ZigZagDictionary ZigZagDictionary{get;set;}
+			public DailyZigZag DailyZigZag{get;set;}
 			
-			public Node(ZigZagDictionary zigZagDictionary){
-				ZigZagDictionary = zigZagDictionary;
+			public Node(DailyZigZag dailyZigZag){
+				DailyZigZag = dailyZigZag;
 			}
 		
 		}
