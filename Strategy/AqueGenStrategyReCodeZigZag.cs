@@ -19,7 +19,7 @@ namespace NinjaTrader.Strategy
     /// Enter the description of your strategy here
     /// </summary>
     [Description("Enter the description of your strategy here")]
-    public class AqueGenNinjaBotStrategy : Strategy
+    public class AqueGenNinjaReCodeZigZag : Strategy
     {
         //#region Variables
         // Wizard generated variables
@@ -54,7 +54,7 @@ namespace NinjaTrader.Strategy
 		private double			currentZigZagHigh	= 0;
 		private double			currentZigZagLow	= 0;
 		private DeviationType	deviationType		= DeviationType.Percent;
-		private double			deviationValue		= 0.55;
+		private double			deviationValue		= 0.5;
 		private DataSeries		zigZagHighZigZags; 
 		private DataSeries		zigZagLowZigZags; 
 		private DataSeries		zigZagHighSeries; 
@@ -66,6 +66,8 @@ namespace NinjaTrader.Strategy
 		
 		private int _rightZigZag = 2;
 		private int _leftZigZag = 2;
+		
+		private int updateAfterChangeZigZagProcent = 50;
 		
 		private int startBar = 0;
 		private int endBar = 0;
@@ -82,6 +84,16 @@ namespace NinjaTrader.Strategy
 		private int lowBarPeriod = 0;
 		private int lastHighBarPeriod = 0;
 		private int lastLowBarPeriod = 0;
+		
+		private double highZigZagApexPrice = 0;
+		private double lowZigZagApexPrice = 0;
+		
+		
+		private int startBarLevel = 0;
+		private int endBarLevel = 0;
+		private double highZigZagApexPriceLevel = 0;
+		private double lowZigZagApexPriceLevel = 100000;
+		private bool isTrendOnPeriodLevelDown = false;
 		
 		
 		
@@ -147,8 +159,6 @@ namespace NinjaTrader.Strategy
 			//PaintPriceMarkers	= false;
 			
 			
-			
-			
 			SetStopLoss(CalculationMode.Ticks, StopLoss);
 			SetProfitTarget(CalculationMode.Ticks, ProfitTarget);
 			
@@ -183,7 +193,7 @@ namespace NinjaTrader.Strategy
 				Print("Day middleValot " + middleValot);
 				Print("SMA Line -> " + smaLine);
 				
-				double procentOfMiddleValot = (middleValot / 100) * ProcentFromMiddleValot;
+				double procentOfMiddleValot = (middleValot / 100) * (100 - ProcentFromMiddleValot);
 				
 				lowLineRSIAnalog = smaLine - procentOfMiddleValot;
 				highLineRSIAnalog = smaLine + procentOfMiddleValot;
@@ -221,13 +231,15 @@ namespace NinjaTrader.Strategy
 		
 		private void OnBarUpdateMain(){
 
-
 			barIndex++;
 			Print("-------------------");
 			
-			//RSIUpdateOnBar();
 			ZigZagUpdateOnBar();
 			
+			if(highZigZagApexPrice == 0 || lowZigZagApexPrice == 0){
+				return;
+			}
+
 			if(lowBarPeriod == 0 || highBarPeriod == 0)
 				return;
 			
@@ -238,73 +250,171 @@ namespace NinjaTrader.Strategy
 			
 			if(highBarPeriod > lowBarPeriod){
 				isTrendOnPeriodDown = false;
-				startBar = lowBarPeriod - 1 - LeftZigZag;
-				endBar = highBarPeriod - 1 + RightZigZag;
+				startBar = lowBarPeriod - 1;
+				endBar = highBarPeriod - 1;
 			}
 			else{
 				isTrendOnPeriodDown = true;
-				startBar = highBarPeriod - 1 - LeftZigZag;
-				endBar = lowBarPeriod - 1 + RightZigZag;
+				startBar = highBarPeriod - 1;
+				endBar = lowBarPeriod - 1;
 			}
-			periodOfCalculate = endBar - startBar;
 			
 			
-			Print("StartPeriod -> " + startBar);
-			Print("EndPeriod -> " + endBar);
 			
-			int firstDiapasonEnd = startBar + GetProcentValue(periodOfCalculate, FirstDiapason);
-			int thirtDiapasoneStart = endBar - GetProcentValue(periodOfCalculate, ThirtDiapason);
 			
-			double firstDiapasoneApex;
-			double thirtDiapasoneApex;
-			if(isDiapasoned){
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						//firstDiapasoneApex = GetApex(true, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(false, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
+			
+			//Print("highZigZagApexPrice " + highZigZagApexPrice);
+			//Print("lowZigZagApexPrice " + lowZigZagApexPrice);
+			
+			double differentPriceBetweenLevelApex = 0;
+			double priceAfterWasChangeApex = 0;
+			if(highZigZagApexPriceLevel != 0 && lowZigZagApexPriceLevel != 0){
+			 	differentPriceBetweenLevelApex = highZigZagApexPriceLevel - lowZigZagApexPriceLevel;
+				priceAfterWasChangeApex = ((differentPriceBetweenLevelApex) / 100 ) * UpdateAfterChangeZigZagProcent;
+			}
+			Print("differentPriceBetweenLevelApex " + differentPriceBetweenLevelApex);
+			
+			
+			Print("highZigZagApexPriceLevel " + highZigZagApexPriceLevel);
+			Print("lowZigZagApexPriceLevel " + lowZigZagApexPriceLevel);
+			
+			Print("highZigZagApexPrice " + highZigZagApexPrice);
+			Print("lowZigZagApexPrice " + lowZigZagApexPrice);
+			
+			
+			Print("isTrendOnPeriodDown " + isTrendOnPeriodDown);
+			Print("isTrendOnPeriodLevelDown " + isTrendOnPeriodLevelDown);
+			
+
+			Print("startBar -> " + startBar);
+			Print("endBar -> " + endBar);
+			
+			
+			Print("firstLevelPrice beforeChange " + firstLevelPrice);
+			Print("secondLevelPrice beforeChange " + secondLevelPrice);
+			Print("thirdLevelPrice beforeChange " + thirdLevelPrice);
+			
+			bool isUpdateBars = false;
+			bool isUpdateBuyLevel = false;
+			bool isUpdateSellLevel = false;
+			
+			
+			if((isTrendOnPeriodLevelDown == true && isTrendOnPeriodDown == true) 
+					|| (isTrendOnPeriodLevelDown == false && isTrendOnPeriodDown == false)){
+				if(isTrendOnPeriodDown){
+					if(lowZigZagApexPrice < lowZigZagApexPriceLevel){
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
 						
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(true, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, thirtDiapasoneStart, endBar);
-						
+						endBarLevel = endBar;
+						isUpdateBars = true;
+						Print("update low Apex");
 					}
-					else{
-						//firstDiapasoneApex = GetApex(false, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(true, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
+					else
+						return;
+				}
+				else{
+					if(highZigZagApexPrice > highZigZagApexPriceLevel){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
 						
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(false, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, thirtDiapasoneStart, endBar);
+						endBarLevel = endBar;
+						isUpdateBars = true;
+						Print("update high Apex");
 					}
-					isChangePeriod = false;
-					//firstLevelPrice = GetAverageBetweenLevel(firstDiapasoneApex, firstLevelPrice, FirstDiapasonPriceDifferent);
-					//thirdLevelPrice = GetAverageBetweenLevel(thirtDiapasoneApex, thirdLevelPrice, ThirtDiapasonPriceDifferent);
+					else
+						return;
 				}
 			}
 			else{
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
+				if(isTrendOnPeriodLevelDown && !isTrendOnPeriodDown){
+					if( highZigZagApexPriceLevel - differentPriceBetweenLevelApex + priceAfterWasChangeApex  < highZigZagApexPrice){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
+						
+						startBarLevel = endBarLevel;
+						endBarLevel = highBar - 1;
+						
+						isUpdateBars = false;
+						isUpdateSellLevel = true;
+						Print("add high Apex");
 					}
-					else{
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
+					else
+						return;
+				}
+				else if(!isTrendOnPeriodLevelDown && isTrendOnPeriodDown){
+					if(lowZigZagApexPriceLevel  + differentPriceBetweenLevelApex - priceAfterWasChangeApex > lowZigZagApexPrice){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
+
+						startBarLevel = endBarLevel;
+						endBarLevel = lowBar - 1;
+						
+						isUpdateBars = false;
+						isUpdateBuyLevel = true;
+						Print("add low Apex");
 					}
+					else
+						return;
+				}
+			}
+			
+			
+			
+			
+			if(isUpdateBars){
+				if(isTrendOnPeriodDown){
+					lowZigZagApexPriceLevel = lowZigZagApexPrice;
+				}
+				else{
+					highZigZagApexPriceLevel = highZigZagApexPrice;
+				}
+			}
+			else{
+				highZigZagApexPriceLevel = highZigZagApexPrice;
+				lowZigZagApexPriceLevel = lowZigZagApexPrice;
+			}
+			
+			
+			//--------------------------------------------------//
+			
+			
+			int startBarLevelForDiapasone = startBarLevel;
+			int endBarLevelForDiapasone = endBarLevel;
+			if(startBarLevelForDiapasone - LeftZigZag > 0){
+				startBarLevelForDiapasone = startBarLevelForDiapasone - LeftZigZag;
+				endBarLevelForDiapasone = endBarLevelForDiapasone + RightZigZag;
+			}
+			
+			periodOfCalculate = endBarLevelForDiapasone - startBarLevelForDiapasone;
+			int firstDiapasonEnd = startBarLevelForDiapasone + GetProcentValue(periodOfCalculate, FirstDiapason);
+			int thirtDiapasoneStart = endBarLevelForDiapasone - GetProcentValue(periodOfCalculate, ThirtDiapason);
+
+
+
+			
+			Print("isUpdateBuyLevel " + isUpdateBuyLevel);
+			Print("isUpdateSellLevel " + isUpdateSellLevel);
+			
+			isTrendOnPeriodLevelDown = isTrendOnPeriodDown;
+			if(!isUpdateBars){
+				if(startBarLevelForDiapasone < endBarLevelForDiapasone && isChangePeriod){
+					
+					if(isUpdateSellLevel){
+						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBarLevelForDiapasone, endBarLevelForDiapasone);
+					}
+					
+					secondLevelPrice = 0;
+					
+					if(isUpdateBuyLevel){
+						thirdLevelPrice = GetLowOrHighPriceOfBar(true, startBarLevelForDiapasone, endBarLevelForDiapasone);
+					}
+							
 					isChangePeriod = false;
 				}
-			
-			}
 				
-			Print("firstLevelPrice -> " + firstLevelPrice);
-			Print("secondLevelPrice -> " + secondLevelPrice);
-			Print("thirdLevelPrice -> " + thirdLevelPrice);
+			}
+			Print("firstLevelPrice AfterChange " + firstLevelPrice);
+			Print("secondLevelPrice AfterChange " + secondLevelPrice);
+			Print("thirdLevelPrice AfterChange " + thirdLevelPrice);
 		}
 		
 		
@@ -320,33 +430,7 @@ namespace NinjaTrader.Strategy
 		private int GetProcentValue(double value, int procent){
 			return Convert.ToInt32((value/100) * procent);
 		}
-		/*
-		private double GetApex(bool isFoundLowPriceOnBar, int startBar, int endBar){
-			
-			double low = Low[CurrentBar - startBar];
-			double high = High[CurrentBar - startBar];
-			int start = CurrentBar - startBar;
-			int end = CurrentBar - endBar;
 
-			for(;start > end; start--){
-				if(isFoundLowPriceOnBar){
-					if(low > Low[start]){
-						low = Low[start];
-					}
-				}
-				else{
-					if(high < High[start]){
-						high = High[start];
-					}
-				}
-			}
-			
-			if(isFoundLowPriceOnBar)
-				return low;
-			else
-				return high;
-		}
-		*/
 		private double GetLowOrHighPriceOfBar(bool isFoundLowPriceOnBar, int startBar, int endBar){
 
 			double low = Low[CurrentBar - startBar];
@@ -372,63 +456,7 @@ namespace NinjaTrader.Strategy
 			else
 				return high;
 		}
-		/*
-		#region RSI
-		private void RSIUpdateOnBar(){
-			if (CurrentBar == 0)
-			{
-				down.Set(0);
-				up.Set(0);
-
-                if (Period < 3)
-                    //Avg.Set(50);
-				return;
-			}
-
-			down.Set(Math.Max(Input[1] - Input[0], 0));
-			up.Set(Math.Max(Input[0] - Input[1], 0));
-
-			if ((CurrentBar + 1) < Period) 
-			{
-				if ((CurrentBar + 1) == (Period - 1))
-					//Avg.Set(50);
-				return;
-			}
-
-			if ((CurrentBar + 1) == Period) 
-			{
-				// First averages 
-				avgDown.Set(SMA(down, Period)[0]);
-				avgUp.Set(SMA(up, Period)[0]);
-			}  
-			else 
-			{
-				// Rest of averages are smoothed
-				avgDown.Set((avgDown[1] * (Period - 1) + down[0]) / Period);
-				avgUp.Set((avgUp[1] * (Period - 1) + up[0]) / Period);
-			}
-
-		 	rsi	  = avgDown[0] == 0 ? 100 : 100 - 100 / (1 + avgUp[0] / avgDown[0]);
-			rsiAvg = (2.0 / (1 + Smooth)) * rsi + (1 - (2.0 / (1 + Smooth))) * rsiAvg;
-			
-			if((rsiAvg < HighRSI && rsi < HighRSI) && (rsiAvg > LowRSI && rsi > LowRSI)){
-				isCanSellRSI = false;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg > HighRSI && rsi > HighRSI){
-				isCanSellRSI = true;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg < LowRSI && rsi < LowRSI){
-				isCanSellRSI = false;
-				isCanBuyRSI = true;
-			}
-
-			//Avg.Set(rsiAvg);
-			//Value.Set(rsi);
-		}
-		#endregion
-		*/
+		
 		#region ZigZag
 		private void ZigZagUpdateOnBar(){
 		if (CurrentBar < 2) // need 3 bars to calculate Low/High
@@ -531,16 +559,18 @@ namespace NinjaTrader.Strategy
 						if(lastLowBarPeriod != lowBar){
 							lastLowBarPeriod = lowBarPeriod;
 							lowBarPeriod = lowBar;
+							
+							if(UseHighLow)
+								lowZigZagApexPrice = Low[CurrentBar - lowBar + 1];
+							else
+								lowZigZagApexPrice = Close[CurrentBar - lowBar + 1];
 						}
+						
 						highBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add High");
-						Print("lowBarPeriod -> " + lowBarPeriod);
 					}
 					if(!addHigh && updateHigh){
 						highBar = CurrentBar;
-						Print("update High");
-						Print("highBar -> " + highBar);
 					}
 					
 					
@@ -559,16 +589,18 @@ namespace NinjaTrader.Strategy
 						if(lastHighBarPeriod != highBar){
 							lastHighBarPeriod = highBarPeriod;
 							highBarPeriod = highBar;
+							
+							if(UseHighLow)
+								highZigZagApexPrice = High[CurrentBar - highBar + 1];
+							else
+								highZigZagApexPrice = Close[CurrentBar - highBar + 1];
 						}
 						lowBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add Low");
-						Print("highBarPeriod ->" + highBarPeriod);
+						
 					}
 					if(!addLow && updateLow){
 						lowBar = CurrentBar;
-						Print("update Low");
-						Print("lowBar -> " + lowBar);
 					}
 					
 					
@@ -604,46 +636,27 @@ namespace NinjaTrader.Strategy
 				BuyOrSell(Price, _lastPrice);
 			}
 		}*/
-			
+		
 		
 		private void BuyOrSell(double price, double lastPrice){
 
 			if (Position.MarketPosition == MarketPosition.Flat)
 			{
-				if(isTrendOnPeriodDown){
-					if(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice") 
-							&& (price < lowLineRSIAnalog)
-							//&& isCanBuyRSI
-						){
-						EnterLong("BuyOrder");
-						Print("OrderAction.Buy");
-					} else
-					if((IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") || IsPriceInOrderPeriod(price, lastPrice, secondLevelPrice, "secondLevelPrice"))
-					//if(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice")
-						&& (price > highLineRSIAnalog)
-							//&& isCanSellRSI
-						){
-						EnterShort("SellOrder");
-						Print("OrderAction.Sell");
-					}
+				
+				if(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice")
+					//&& (price > highLineRSIAnalog)
+					){
+					EnterShort("SellOrder");
+					Print("OrderAction.Sell");
 				}
-				else{
-					if((IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") || IsPriceInOrderPeriod(price, lastPrice, secondLevelPrice, "secondLevelPrice")) 
-					//if(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice") 
-						&& (price < lowLineRSIAnalog)
-							//&& isCanBuyRSI
-						){	
-						EnterLong("BuyOrder");
-						Print("OrderAction.Buy");
-					} else
-					if(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice") 
-							&& (price > highLineRSIAnalog)
-							//&& isCanSellRSI
-						){
-						EnterShort("SellOrder");
-						Print("OrderAction.Sell");
-					}
-				}
+				else if(IsPriceInOrderPeriod(price, lastPrice, thirdLevelPrice, "thirdLevelPrice") 
+						//&& (price < lowLineRSIAnalog)
+					){
+					EnterLong("BuyOrder");
+					Print("OrderAction.Buy");
+				} 
+
+
 			}
 			
 			DeleteLevelPrice(IsPriceInOrderPeriod(price, lastPrice, firstLevelPrice, "firstLevelPrice"), "firstLevelPrice");
@@ -693,15 +706,6 @@ namespace NinjaTrader.Strategy
         #region Properties	
 		
 		
-
-		
-		[Description("If true - 3 diapasone in zigzag")]
-		[GridCategory("Diapasone")]
-		public bool IsDiapasoned
-		{
-			get{return isDiapasoned;}
-			set{isDiapasoned = value;}
-		}
 		
 		[Description("Установить отступ от крайне левой точки ZigZag")]
 		[GridCategory("_ZigZag")]
@@ -842,7 +846,13 @@ namespace NinjaTrader.Strategy
 		}
 		
 		
-		
+		[Description("Numbers of bars used for calculations")]
+		[GridCategory("_ZigZag")]
+		public int UpdateAfterChangeZigZagProcent
+		{
+			get { return updateAfterChangeZigZagProcent; }
+			set { updateAfterChangeZigZagProcent = Math.Max(1, value); }
+		}
 		
 		
 		

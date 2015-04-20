@@ -28,7 +28,7 @@ namespace NinjaTrader.Indicator
         #region Variables
 		private double			currentZigZagHigh	= 0;
 		private double			currentZigZagLow	= 0;
-		private DeviationType	deviationType		= DeviationType.Points;
+		private DeviationType	deviationType		= DeviationType.Percent;
 		private double			deviationValue		= 0.5;
 		private DataSeries		zigZagHighZigZags; 
 		private DataSeries		zigZagLowZigZags; 
@@ -40,7 +40,25 @@ namespace NinjaTrader.Indicator
 		private bool			useHighLow			= false;
 
         #endregion
-
+		
+		//AqueGen modification
+		private bool isChangePeriod = false;
+		
+		private int lastLowBarPeriod = 0;
+		private int lowBarPeriod = 0;
+		
+		private int lowBar = 0;
+		private int highBar = 0;
+		
+		private int lastHighBarPeriod = 0;
+		private int highBarPeriod = 0;
+		
+		private double lowZigZagPrice = 0;
+		private double highZigZagPrice = 0;
+		
+		private double price = 0;
+		private int procentOfChangePrice = 10;
+		
         /// <summary>
         /// This method is used to configure the indicator and is called once before any bar data is loaded.
         /// </summary>
@@ -56,8 +74,11 @@ namespace NinjaTrader.Indicator
 			DisplayInDataBox	= false;
             Overlay				= true;
 			PaintPriceMarkers	= false;
+			
+			//Add(PeriodType.Tick, 1);
+			
         }
-
+#region Low High Bar
 		/// <summary>
 		/// Returns the number of bars ago a zig zag low occurred. Returns a value of -1 if a zig zag low is not found within the look back period.
 		/// </summary>
@@ -130,134 +151,205 @@ namespace NinjaTrader.Indicator
 
 			return -1;
 		}
-
+#endregion
         /// <summary>
         /// Called on each bar update event (incoming tick)
         /// </summary>
         protected override void OnBarUpdate()
         {
-			if (CurrentBar < 2) // need 3 bars to calculate Low/High
-			{
-				zigZagHighSeries.Set(0);
+			//if(BarsInProgress == 0){
+				if (CurrentBar < 2) // need 3 bars to calculate Low/High
+				{
+					zigZagHighSeries.Set(0);
+					zigZagHighZigZags.Set(0);
+					zigZagLowSeries.Set(0);
+					zigZagLowZigZags.Set(0);
+					return;
+				}
+
+				// Initialization
+				if (lastSwingPrice == 0.0)
+					lastSwingPrice = Input[0];
+
+				IDataSeries highSeries	= High;
+				IDataSeries lowSeries	= Low;
+
+				if (!useHighLow)
+				{
+					highSeries	= Input;
+					lowSeries	= Input;
+				}
+
+				// Calculation always for 1-bar ago !
+				
+				if(isChangePeriod){
+				
+				
+					isChangePeriod = false;
+				}
+				
+				
+
+				double tickSize = Bars.Instrument.MasterInstrument.TickSize;
+				bool isSwingHigh	= highSeries[1] >= highSeries[0] - double.Epsilon 
+									&& highSeries[1] >= highSeries[2] - double.Epsilon;
+				bool isSwingLow		= lowSeries[1] <= lowSeries[0] + double.Epsilon 
+								&& lowSeries[1] <= lowSeries[2] + double.Epsilon;   
+				Print("---------------");
+				Print("lowZigZagPrice " + lowZigZagPrice);
+				Print("highZigZagPrice " + highZigZagPrice);
+				price = Close[0];
+				Print("price " + price);
+				Print("trendDir " + trendDir);
+				
+				bool isOverHighDeviation;
+				bool isOverLowDeviation;
+				
+
+				double priceToChangeZigZag = ((highZigZagPrice - lowZigZagPrice) / 100) * procentOfChangePrice;
+				
+				isOverHighDeviation	= ((deviationType == DeviationType.Percent && IsPriceGreater(highSeries[1], (lastSwingPrice * (1.0 + deviationValue * 0.01))))
+											|| (deviationType == DeviationType.Points && IsPriceGreater(highSeries[1], lastSwingPrice + deviationValue)));
+				isOverLowDeviation		= ((deviationType == DeviationType.Percent && IsPriceGreater(lastSwingPrice * (1.0 - deviationValue * 0.01), lowSeries[1]))
+											|| (deviationType == DeviationType.Points && IsPriceGreater(lastSwingPrice - deviationValue, lowSeries[1])));
+
+				Print(Time[0].ToString());
+			
+				Print("isOverHighDeviation1 " + isOverHighDeviation);
+				Print("isOverLowDeviation1 " + isOverLowDeviation);
+				
+				
+				double	saveValue	= 0.0;
+				bool	addHigh		= false; 
+				bool	addLow		= false; 
+				bool	updateHigh	= false; 
+				bool	updateLow	= false; 
+
 				zigZagHighZigZags.Set(0);
-				zigZagLowSeries.Set(0);
 				zigZagLowZigZags.Set(0);
-				return;
-			}
 
-			// Initialization
-			if (lastSwingPrice == 0.0)
-				lastSwingPrice = Input[0];
+				if (!isSwingHigh && !isSwingLow)
+				{
+					zigZagHighSeries.Set(currentZigZagHigh);
+					zigZagLowSeries.Set(currentZigZagLow);
+					return;
+				}
+				
+				if (trendDir <= 0 && isSwingHigh && isOverHighDeviation)
+				{	
+					//if(IsTickGreater(price, lowZigZagPrice + priceToChangeZigZag) || (lowZigZagPrice == 0 || highZigZagPrice == 0)){
+						saveValue	= highSeries[1];
+						addHigh		= true;
+						trendDir	= 1;
+					//}
+					
+				}	
+				else if (trendDir >= 0 && isSwingLow && isOverLowDeviation)
+				{	
+					//if(IsTickGreater(highZigZagPrice - priceToChangeZigZag, price) || (lowZigZagPrice == 0 || highZigZagPrice == 0)){
+						saveValue	= lowSeries[1];
+						addLow		= true;
+						trendDir	= -1;
+					//}
 
-			IDataSeries highSeries	= High;
-			IDataSeries lowSeries	= Low;
+				}	
+				else if (trendDir == 1 && isSwingHigh && IsPriceGreater(highSeries[1], lastSwingPrice)) 
+				{
+					//if(IsTickGreater(price, lowZigZagPrice + priceToChangeZigZag) || (lowZigZagPrice == 0 || highZigZagPrice == 0)){
+						saveValue	= highSeries[1];
+						updateHigh	= true;
+					//}
+				}
+				else if (trendDir == -1 && isSwingLow && IsPriceGreater(lastSwingPrice, lowSeries[1])) 
+				{
+					//if(IsTickGreater(highZigZagPrice - priceToChangeZigZag, price) || (lowZigZagPrice == 0 || highZigZagPrice == 0)){
+						saveValue	= lowSeries[1];
+						updateLow	= true;
+					//}
+				}
 
-			if (!useHighLow)
-			{
-				highSeries	= Input;
-				lowSeries	= Input;
-			}
+				if (addHigh || addLow || updateHigh || updateLow)
+				{
+					if (updateHigh && lastSwingIdx >= 0)
+					{
+						zigZagHighZigZags.Set(CurrentBar - lastSwingIdx, 0);
+						Value.Reset(CurrentBar - lastSwingIdx);
+					}
+					else if (updateLow && lastSwingIdx >= 0)
+					{
+						zigZagLowZigZags.Set(CurrentBar - lastSwingIdx, 0);
+						Value.Reset(CurrentBar - lastSwingIdx);
+					}
 
-			// Calculation always for 1-bar ago !
+					if (addHigh || updateHigh)
+					{
+						zigZagHighZigZags.Set(1, saveValue);
+						zigZagHighZigZags.Set(0, 0);
 
-			double tickSize = Bars.Instrument.MasterInstrument.TickSize;
-			bool isSwingHigh	= highSeries[1] >= highSeries[0] - double.Epsilon 
-								&& highSeries[1] >= highSeries[2] - double.Epsilon;
-			bool isSwingLow		= lowSeries[1] <= lowSeries[0] + double.Epsilon 
-								&& lowSeries[1] <= lowSeries[2] + double.Epsilon;  
-			bool isOverHighDeviation	= (deviationType == DeviationType.Percent && IsPriceGreater(highSeries[1], (lastSwingPrice * (1.0 + deviationValue * 0.01))))
-										|| (deviationType == DeviationType.Points && IsPriceGreater(highSeries[1], lastSwingPrice + deviationValue));
-			bool isOverLowDeviation		= (deviationType == DeviationType.Percent && IsPriceGreater(lastSwingPrice * (1.0 - deviationValue * 0.01), lowSeries[1]))
-										|| (deviationType == DeviationType.Points && IsPriceGreater(lastSwingPrice - deviationValue, lowSeries[1]));
+						currentZigZagHigh = saveValue;
+						zigZagHighSeries.Set(1, currentZigZagHigh);
+						Value.Set(1, currentZigZagHigh);
+						
+						
+						if(addHigh && !updateHigh){
+							if(lastLowBarPeriod != lowBar){
+								lastLowBarPeriod = lowBarPeriod;
+								lowBarPeriod = lowBar;
+								lowZigZagPrice = Close[CurrentBar - lowBar + 1];
+							}
+							highBar = CurrentBar;
+							isChangePeriod = true;
+							Print("add High");
+							Print("lowBarPeriod -> " + lowBarPeriod);
+						}
+						if(!addHigh && updateHigh){
+							highBar = CurrentBar;
+							Print("update High");
+							Print("highBar -> " + highBar);
+						}
+						
+					}
+					else if (addLow || updateLow) 
+					{
+						zigZagLowZigZags.Set(1, saveValue);
+						zigZagLowZigZags.Set(0, 0);
 
-			double	saveValue	= 0.0;
-			bool	addHigh		= false; 
-			bool	addLow		= false; 
-			bool	updateHigh	= false; 
-			bool	updateLow	= false; 
+						currentZigZagLow = saveValue;
+						zigZagLowSeries.Set(1, currentZigZagLow);
+						Value.Set(1, currentZigZagLow);
+						
+						
+						if(addLow && !updateLow){
+							if(lastHighBarPeriod != highBar){
+								lastHighBarPeriod = highBarPeriod;
+								highBarPeriod = highBar;
+								highZigZagPrice = Close[CurrentBar - highBar + 1];
+							}
+							lowBar = CurrentBar;
+							isChangePeriod = true;
+							Print("add Low");
+							Print("highBarPeriod ->" + highBarPeriod);
+						}
+						if(!addLow && updateLow){
+							lowBar = CurrentBar;
+							Print("update Low");
+							Print("lowBar -> " + lowBar);
+						}
+						
+						
+					}
 
-			zigZagHighZigZags.Set(0);
-			zigZagLowZigZags.Set(0);
+					lastSwingIdx	= CurrentBar - 1;
+					lastSwingPrice	= saveValue;
+				}
 
-			if (!isSwingHigh && !isSwingLow)
-			{
 				zigZagHighSeries.Set(currentZigZagHigh);
 				zigZagLowSeries.Set(currentZigZagLow);
-				return;
-			}
-			
-			if (trendDir <= 0 && isSwingHigh && isOverHighDeviation)
-			{	
-				saveValue	= highSeries[1];
-				addHigh		= true;
-				trendDir	= 1;
-				//Print("trendDir <= 0 && isSwingHigh && isOverHighDeviation");
-			}	
-			else if (trendDir >= 0 && isSwingLow && isOverLowDeviation)
-			{	
-				saveValue	= lowSeries[1];
-				addLow		= true;
-				trendDir	= -1;
-				//Print("trendDir >= 0 && isSwingLow && isOverLowDeviation");
-			}	
-			else if (trendDir == 1 && isSwingHigh && IsPriceGreater(highSeries[1], lastSwingPrice)) 
-			{
-				saveValue	= highSeries[1];
-				updateHigh	= true;
-				//Print("trendDir == 1 && isSwingHigh && IsPriceGreater(highSeries[1], lastSwingPrice)");
-			}
-			else if (trendDir == -1 && isSwingLow && IsPriceGreater(lastSwingPrice, lowSeries[1])) 
-			{
-				saveValue	= lowSeries[1];
-				updateLow	= true;
-				//Print("trendDir == -1 && isSwingLow && IsPriceGreater(lastSwingPrice, lowSeries[1])");
-			}
-
-			if (addHigh || addLow || updateHigh || updateLow)
-			{
-				if (updateHigh && lastSwingIdx >= 0)
-				{
-					zigZagHighZigZags.Set(CurrentBar - lastSwingIdx, 0);
-					Value.Reset(CurrentBar - lastSwingIdx);
-					//Print("updateHigh && lastSwingIdx >= 0");
-				}
-				else if (updateLow && lastSwingIdx >= 0)
-				{
-					zigZagLowZigZags.Set(CurrentBar - lastSwingIdx, 0);
-					Value.Reset(CurrentBar - lastSwingIdx);
-					//Print("updateLow && lastSwingIdx >= 0");
-				}
-
-				if (addHigh || updateHigh)
-				{
-					zigZagHighZigZags.Set(1, saveValue);
-					zigZagHighZigZags.Set(0, 0);
-
-					currentZigZagHigh = saveValue;
-					zigZagHighSeries.Set(1, currentZigZagHigh);
-					Value.Set(1, currentZigZagHigh);
-					
-					if(addHigh && !updateHigh){}
-						//Print("addHigh");
-				}
-				else if (addLow || updateLow) 
-				{
-					zigZagLowZigZags.Set(1, saveValue);
-					zigZagLowZigZags.Set(0, 0);
-
-					currentZigZagLow = saveValue;
-					zigZagLowSeries.Set(1, currentZigZagLow);
-					Value.Set(1, currentZigZagLow);
-					if(addLow && !updateLow){}
-						//Print("addLow");
-				}
-
-				lastSwingIdx	= CurrentBar - 1;
-				lastSwingPrice	= saveValue;
-			}
-
-			zigZagHighSeries.Set(currentZigZagHigh);
-			zigZagLowSeries.Set(currentZigZagLow);
+			//}
+			//if(BarsInProgress == 1){
+			//	price = Close[0];
+				//Print("Price -> " + price);
+			//}
         }
 
         #region Properties
@@ -288,6 +380,17 @@ namespace NinjaTrader.Indicator
             get { return useHighLow; }
             set { useHighLow = value; }
         }
+		
+		[Description("Procent Of Change Price")]
+        [GridCategory("Parameters")]
+		[Gui.Design.DisplayName("Procent Of Change Price")]
+		[RefreshProperties(RefreshProperties.All)]
+        public int ProcentOfChangePrice
+        {
+            get { return procentOfChangePrice; }
+            set { procentOfChangePrice = value; }
+        }
+		
 
 		/// <summary>
 		/// Gets the ZigZag high points.
@@ -346,6 +449,14 @@ namespace NinjaTrader.Indicator
 		private bool IsPriceGreater(double a, double b)
 		{
 			if (a > b && a - b > TickSize / 2)
+				return true; 
+			else 
+				return false;
+		}
+		
+		private bool IsTickGreater(double a, double b)
+		{
+			if (a > b)
 				return true; 
 			else 
 				return false;
@@ -452,20 +563,20 @@ namespace NinjaTrader.Indicator
         /// The ZigZag indicator shows trend lines filtering out changes below a defined level. 
         /// </summary>
         /// <returns></returns>
-        public ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, bool useHighLow)
+        public ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
-            return ZigZagAqueGen(Input, deviationType, deviationValue, useHighLow);
+            return ZigZagAqueGen(Input, deviationType, deviationValue, procentOfChangePrice, useHighLow);
         }
 
         /// <summary>
         /// The ZigZag indicator shows trend lines filtering out changes below a defined level. 
         /// </summary>
         /// <returns></returns>
-        public ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, bool useHighLow)
+        public ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
             if (cacheZigZagAqueGen != null)
                 for (int idx = 0; idx < cacheZigZagAqueGen.Length; idx++)
-                    if (cacheZigZagAqueGen[idx].DeviationType == deviationType && Math.Abs(cacheZigZagAqueGen[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheZigZagAqueGen[idx].UseHighLow == useHighLow && cacheZigZagAqueGen[idx].EqualsInput(input))
+                    if (cacheZigZagAqueGen[idx].DeviationType == deviationType && Math.Abs(cacheZigZagAqueGen[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheZigZagAqueGen[idx].ProcentOfChangePrice == procentOfChangePrice && cacheZigZagAqueGen[idx].UseHighLow == useHighLow && cacheZigZagAqueGen[idx].EqualsInput(input))
                         return cacheZigZagAqueGen[idx];
 
             lock (checkZigZagAqueGen)
@@ -474,12 +585,14 @@ namespace NinjaTrader.Indicator
                 deviationType = checkZigZagAqueGen.DeviationType;
                 checkZigZagAqueGen.DeviationValue = deviationValue;
                 deviationValue = checkZigZagAqueGen.DeviationValue;
+                checkZigZagAqueGen.ProcentOfChangePrice = procentOfChangePrice;
+                procentOfChangePrice = checkZigZagAqueGen.ProcentOfChangePrice;
                 checkZigZagAqueGen.UseHighLow = useHighLow;
                 useHighLow = checkZigZagAqueGen.UseHighLow;
 
                 if (cacheZigZagAqueGen != null)
                     for (int idx = 0; idx < cacheZigZagAqueGen.Length; idx++)
-                        if (cacheZigZagAqueGen[idx].DeviationType == deviationType && Math.Abs(cacheZigZagAqueGen[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheZigZagAqueGen[idx].UseHighLow == useHighLow && cacheZigZagAqueGen[idx].EqualsInput(input))
+                        if (cacheZigZagAqueGen[idx].DeviationType == deviationType && Math.Abs(cacheZigZagAqueGen[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheZigZagAqueGen[idx].ProcentOfChangePrice == procentOfChangePrice && cacheZigZagAqueGen[idx].UseHighLow == useHighLow && cacheZigZagAqueGen[idx].EqualsInput(input))
                             return cacheZigZagAqueGen[idx];
 
                 ZigZagAqueGen indicator = new ZigZagAqueGen();
@@ -492,6 +605,7 @@ namespace NinjaTrader.Indicator
                 indicator.Input = input;
                 indicator.DeviationType = deviationType;
                 indicator.DeviationValue = deviationValue;
+                indicator.ProcentOfChangePrice = procentOfChangePrice;
                 indicator.UseHighLow = useHighLow;
                 Indicators.Add(indicator);
                 indicator.SetUp();
@@ -517,18 +631,18 @@ namespace NinjaTrader.MarketAnalyzer
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
-        public Indicator.ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, bool useHighLow)
+        public Indicator.ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
-            return _indicator.ZigZagAqueGen(Input, deviationType, deviationValue, useHighLow);
+            return _indicator.ZigZagAqueGen(Input, deviationType, deviationValue, procentOfChangePrice, useHighLow);
         }
 
         /// <summary>
         /// The ZigZag indicator shows trend lines filtering out changes below a defined level. 
         /// </summary>
         /// <returns></returns>
-        public Indicator.ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, bool useHighLow)
+        public Indicator.ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
-            return _indicator.ZigZagAqueGen(input, deviationType, deviationValue, useHighLow);
+            return _indicator.ZigZagAqueGen(input, deviationType, deviationValue, procentOfChangePrice, useHighLow);
         }
     }
 }
@@ -543,21 +657,21 @@ namespace NinjaTrader.Strategy
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
-        public Indicator.ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, bool useHighLow)
+        public Indicator.ZigZagAqueGen ZigZagAqueGen(DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
-            return _indicator.ZigZagAqueGen(Input, deviationType, deviationValue, useHighLow);
+            return _indicator.ZigZagAqueGen(Input, deviationType, deviationValue, procentOfChangePrice, useHighLow);
         }
 
         /// <summary>
         /// The ZigZag indicator shows trend lines filtering out changes below a defined level. 
         /// </summary>
         /// <returns></returns>
-        public Indicator.ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, bool useHighLow)
+        public Indicator.ZigZagAqueGen ZigZagAqueGen(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int procentOfChangePrice, bool useHighLow)
         {
             if (InInitialize && input == null)
                 throw new ArgumentException("You only can access an indicator with the default input/bar series from within the 'Initialize()' method");
 
-            return _indicator.ZigZagAqueGen(input, deviationType, deviationValue, useHighLow);
+            return _indicator.ZigZagAqueGen(input, deviationType, deviationValue, procentOfChangePrice, useHighLow);
         }
     }
 }

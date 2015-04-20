@@ -1180,13 +1180,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
@@ -1216,6 +1216,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:NinjaTrader.Indicator.Indicator.SMAAqueGen(System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NinjaTrader.Indicator.Indicator.SMAAqueGen(NinjaTrader.Data.IDataSeries,System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:NinjaTrader.Indicator.Indicator.TrueLevels(System.Int32,System.Int32)">
             <summary>
             Enter the description of your new custom indicator here
@@ -1228,13 +1240,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Indicator.Indicator.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.Indicator.Indicator.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
@@ -2493,13 +2505,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
@@ -2529,6 +2541,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.SMAAqueGen(System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.SMAAqueGen(NinjaTrader.Data.IDataSeries,System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:NinjaTrader.MarketAnalyzer.Column.TrueLevels(System.Int32,System.Int32)">
             <summary>
             Enter the description of your new custom indicator here
@@ -2541,13 +2565,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.MarketAnalyzer.Column.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.MarketAnalyzer.Column.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
@@ -3816,13 +3840,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Int32,System.Boolean,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.AqueGenNinjaBot(NinjaTrader.Data.IDataSeries,System.Int32,NinjaTrader.Data.DeviationType,System.Double,System.Boolean,System.Int32,System.Int32,System.Double,System.Int32,System.Int32,System.Double,System.Int32,System.Boolean)">
             <summary>
             Enter the description of your new custom indicator here
             </summary>
@@ -3852,6 +3876,18 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:NinjaTrader.Strategy.Strategy.SMAAqueGen(System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:NinjaTrader.Strategy.Strategy.SMAAqueGen(NinjaTrader.Data.IDataSeries,System.Int32,System.Int32)">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:NinjaTrader.Strategy.Strategy.TrueLevels(System.Int32,System.Int32)">
             <summary>
             Enter the description of your new custom indicator here
@@ -3864,13 +3900,13 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.ZigZagAqueGen(NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
             <returns></returns>
         </member>
-        <member name="M:NinjaTrader.Strategy.Strategy.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Boolean)">
+        <member name="M:NinjaTrader.Strategy.Strategy.ZigZagAqueGen(NinjaTrader.Data.IDataSeries,NinjaTrader.Data.DeviationType,System.Double,System.Int32,System.Boolean)">
             <summary>
             The ZigZag indicator shows trend lines filtering out changes below a defined level. 
             </summary>
@@ -6362,6 +6398,25 @@
             <summary>
             </summary>
         </member>
+        <member name="T:NinjaTrader.Indicator.SMAAqueGen">
+            <summary>
+            The SMA (Simple Moving Average) is an indicator that shows the average value of a security's price over a period of time.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Indicator.SMAAqueGen.Initialize">
+            <summary>
+            This method is used to configure the indicator and is called once before any bar data is loaded.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Indicator.SMAAqueGen.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick).
+            </summary>
+        </member>
+        <member name="P:NinjaTrader.Indicator.SMAAqueGen.SMAPeriod">
+            <summary>
+            </summary>
+        </member>
         <member name="T:NinjaTrader.Indicator.TrueLevels">
             <summary>
             Enter the description of your new custom indicator here
@@ -7262,6 +7317,21 @@
             </summary>
         </member>
         <member name="M:NinjaTrader.Strategy.AqueGenNinjaTickBot.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
+        <member name="T:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag.IsZigZagChangedPosition(System.Int32,System.Int32)">
             <summary>
             Called on each bar update event (incoming tick)
             </summary>

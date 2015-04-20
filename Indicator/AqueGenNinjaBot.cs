@@ -21,11 +21,10 @@ namespace NinjaTrader.Indicator
     {
          //#region Variables
         // Wizard generated variables
+		
+		
 		private double _price = 0;
 		private double _lastPrice = 0;
-
-		private int _period = 10;	
-		
 
 		
 		private int _waitBarsAfterChangeTrend = 5;
@@ -40,10 +39,6 @@ namespace NinjaTrader.Indicator
 		
 		private double startOrderPrice = 0;
 		
-		private string	atmStrategyId		= string.Empty;
-		private string	orderId				= string.Empty;
-		
-		private string openedOrderId;
 		
 		private bool isFoundTrend = false;
 		
@@ -55,7 +50,7 @@ namespace NinjaTrader.Indicator
 		private double			currentZigZagHigh	= 0;
 		private double			currentZigZagLow	= 0;
 		private DeviationType	deviationType		= DeviationType.Percent;
-		private double			deviationValue		= 0.55;
+		private double			deviationValue		= 0.5;
 		private DataSeries		zigZagHighZigZags; 
 		private DataSeries		zigZagLowZigZags; 
 		private DataSeries		zigZagHighSeries; 
@@ -84,31 +79,30 @@ namespace NinjaTrader.Indicator
 		private int lastHighBarPeriod = 0;
 		private int lastLowBarPeriod = 0;
 		
+		private double highZigZagApexPrice = 0;
+		private double lowZigZagApexPrice = 0;
 		
 		
-		private bool isDiapasoned = true;
+		private int startBarLevel = 0;
+		private int endBarLevel = 0;
+		private double highZigZagApexPriceLevel = 0;
+		private double lowZigZagApexPriceLevel = 100000;
+		private bool isTrendOnPeriodLevelDown = false;
+		
+
+		
+		
+		private bool isDiapasoned = false;
 		
 		private int periodOfCalculate = 0;
 
 		
-		//RSI
-		private DataSeries	avgUp;
-		private DataSeries	avgDown;
-		private DataSeries	down;
-		private int	period	= 10;
-		private int	smooth	= 1;
-		private DataSeries					up;
+		//Analog RSI
 		
 		private bool isCanBuyRSI = false;
 		private bool isCanSellRSI = false;
 		
-		private int _lowRSI = 40;
-		private int _highRSI = 60;
-		
-		private double rsiAvg;
-		private double rsi;
-		
-		
+
 		private bool isChangePeriod = false;
 		
 		//Diapason
@@ -120,31 +114,44 @@ namespace NinjaTrader.Indicator
 		
 		
 		//Orders
-		private int stopLoss = 100;
-		private int profitTarget = 500;
+		private double stopLoss = 10;
+		private double profitTarget = 50;
 		
 		
 		
 		private int startTimeTrading = 91500;
 		private int endTimeTrading = 204500;
 		
+		
+		private bool initiateInOnBarUpdate = true;
+		
+		
 		//Analog RSI
 		private double lowLineRSIAnalog = 0;
-		private double highLineRSIAnalog = 0;
+		private double highLineRSIAnalog = 100000;
 		
-		private double smaLine = 0;
+		//SMA
+		private int smaPeriod = 100;
+		private double  smaLine = 0;
+		private double middleValot = 0;
+		private int dayOfSMAValot = 5;
+		private int procentFromMiddleValot = 50;
+		
+		
+		private int updateAfterChangeZigZagProcent = 50;
 		
         // User defined variables (add any user defined variables below)
         //#endregion
 
+		
         /// <summary>
         /// This method is used to configure the indicator and is called once before any bar data is loaded.
         /// </summary>
         protected override void Initialize()
         {
 			CalculateOnBarClose = true;
-            Overlay				= true;
-			
+			Overlay				= true;
+
 			//zigzag
 			zigZagHighSeries	= new DataSeries(this, MaximumBarsLookBack.Infinite); 
 			zigZagHighZigZags	= new DataSeries(this, MaximumBarsLookBack.Infinite); 
@@ -152,19 +159,18 @@ namespace NinjaTrader.Indicator
 			zigZagLowZigZags	= new DataSeries(this, MaximumBarsLookBack.Infinite); 
 
 			//DisplayInDataBox	= false;
-            //Overlay				= true;
+            
 			//PaintPriceMarkers	= false;
 			
-			//RSI
-			avgUp				= new DataSeries(this);
-			avgDown				= new DataSeries(this);
-			down				= new DataSeries(this);
-			up					= new DataSeries(this);
 			
+			
+			
+			//SetStopLoss(CalculationMode.Ticks, StopLoss);
+			//SetProfitTarget(CalculationMode.Ticks, ProfitTarget);
+			
+			//Add(PeriodType.Minute, MainMinuteTimeFrame);
 			//Add(PeriodType.Tick, 1);
-			//Add(PeriodType.Minute, 5);
-			
-			//Add(new Plot(Color.Orange, "SMA"));
+			//Add(PeriodType.Day, 1);
 			
         }
 
@@ -173,223 +179,284 @@ namespace NinjaTrader.Indicator
         /// </summary>
         protected override void OnBarUpdate()
     	{
-			if(CurrentBar < 20)
+			
+			if(CurrentBars[0] < 20)
 				return;
+			//if(CurrentBars[1] < DayOfSMAValot)
+			//	return;
 			
 			if(BarsInProgress == 0){
-				OnBarUpdateMain();
+
+				
+				//Print("==============");
+				smaLine = SMA(SMAPeriod)[0];
+				//Print("Day middleValot " + middleValot);
+				//Print("SMA Line -> " + smaLine);
+				
+				double procentOfMiddleValot = (middleValot / 100) * (100 - ProcentFromMiddleValot);
+				
+				lowLineRSIAnalog = smaLine - procentOfMiddleValot;
+				highLineRSIAnalog = smaLine + procentOfMiddleValot;
+				
+				//Print("lowLineRSIAnalog " + lowLineRSIAnalog);
+				//Print("highLineRSIAnalog " + highLineRSIAnalog);
 				//Print(Time[0].ToString());
 				
+				
+				OnBarUpdateMain();
+				//Print(Time[0].ToString());
 			}
 			
-			//if(BarsInProgress == 1){	
-				//if(ToTime(Time[0]) >= StartTimeTrading && ToTime(Time[0]) <= EndTimeTrading)
-				//{
-				//	double openPrice = Opens[1][0];
-				
-				//	_lastPrice = Price;
-				//	Price = openPrice;
-
-					//BuyOrSell(Price, _lastPrice);
-				//}
+			 /*if(BarsInProgress == 1){	
+				double openPrice = Opens[1][0];
 			
+				_lastPrice = Price;
+				Price = openPrice;
+
+				//BuyOrSell(Price, _lastPrice);
+				
+			}
 			
 			if(BarsInProgress == 1){
-				
-				double firstValot = Highs[2][0] - Lows[2][0];
-				double secondValot = Highs[2][1] - Lows[2][1];
-				double thirtValot = Highs[2][2] - Lows[2][2];
-				double fourthValot = Highs[2][3] - Lows[2][3];
-				double fifthValot = Highs[2][4] - Lows[2][4];
-				
-				double middleValot = (firstValot + secondValot + thirtValot + fourthValot + fifthValot) / 5;
-				
-				Print("-----------");
-				Print("middleValot " + middleValot);
 
-				OnBarUpdateSMA();
+				middleValot = 0;
 				
-				lowLineRSIAnalog = smaLine - (middleValot / 2);
-				highLineRSIAnalog = smaLine + (middleValot / 2);
-				
-				Print("lowLineRSIAnalog " + lowLineRSIAnalog);
-				Print("highLineRSIAnalog " + highLineRSIAnalog);
-				
-				DrawHorizontalLine("hor1", lowLineRSIAnalog, Color.SteelBlue);
-				DrawHorizontalLine("hor2", highLineRSIAnalog, Color.SteelBlue);
-				
-				//Print("Day bar -> " + Opens[2][1]);
-				Print(Time[0].ToString());
-			}
+				for(int i = 0; i < DayOfSMAValot; i++){
+					middleValot = middleValot + Highs[2][i] - Lows[2][i];
+				}
+				middleValot = middleValot / DayOfSMAValot;
+				Print("Day middleValot " + middleValot);	
+			}	*/
 			
 		}
-		
-		private void OnBarUpdateSMA(){
-			if (CurrentBar == 0){}
-				//Value.Set(Input[0]);
-			else
-			{
-				double last = Close[1] * Math.Min(CurrentBar, Period);
-
-				if (CurrentBar >= Period){
-					smaLine = ((last + Close[0] - Close[Period]) / Math.Min(CurrentBar, Period));
-				}
-				else
-					smaLine = ((last + Close[0]) / (Math.Min(CurrentBar, Period) + 1));
-			}
-		}
-		
 		
 		private void OnBarUpdateMain(){
-			
-		if(CurrentBar < 20)
-			return;
            
-			barIndex++;
-			//Print("------------------");
+
 			
-			RSIUpdateOnBar();
+
+			
+			
+			barIndex++;
+			//Print("-------------------");
+			
 			ZigZagUpdateOnBar();
-		
+			
+			if(highZigZagApexPrice == 0 || lowZigZagApexPrice == 0){
+				return;
+			}
+			
+			
+			
+			
 			if(lowBarPeriod == 0 || highBarPeriod == 0)
 				return;
-		
+			
 			//Print("lowBar -> " + lowBar);
 			//Print("highBar -> " + highBar);
-			
-			//Print("lowBarPeriod -> " + lowBarPeriod);
-			//Print("highBarPeriod -> " + highBarPeriod);
-			
-			
+		
 			//Print("Now Bar is -> " + CurrentBar);
-			
-			int startBar = 0;
-			int endBar = 0;
-			
 			
 			if(highBarPeriod > lowBarPeriod){
 				isTrendOnPeriodDown = false;
-				startBar = lowBarPeriod - 1 - LeftZigZag;
-				endBar = highBarPeriod - 1 + RightZigZag;
+				startBar = lowBarPeriod/* - 1 - LeftZigZag*/;
+				endBar = highBarPeriod - 1/* + RightZigZag*/;
 			}
 			else{
 				isTrendOnPeriodDown = true;
-				startBar = highBarPeriod - 1 - LeftZigZag;
-				endBar = lowBarPeriod - 1 + RightZigZag;
+				startBar = highBarPeriod - 1/* - LeftZigZag*/;
+				endBar = lowBarPeriod - 1/* + RightZigZag*/;
 			}
-			periodOfCalculate = endBar - startBar;
+
+			//Print("highZigZagApexPrice " + highZigZagApexPrice);
+			//Print("lowZigZagApexPrice " + lowZigZagApexPrice);
+			
+			double differentPriceBetweenLevelApex = ((highZigZagApexPriceLevel - lowZigZagApexPriceLevel) / 100 ) * UpdateAfterChangeZigZagProcent;
+			//Print("differentPriceBetweenLevelApex " + differentPriceBetweenLevelApex);
 			
 			
-			//Print("StartPeriod -> " + startBar);
-			DrawVerticalLine("StartPeriod", CurrentBar - startBar, Color.Black);
-			//Print("EndPeriod -> " + endBar);
-			DrawVerticalLine("EndPeriod", CurrentBar - endBar, Color.Black);
+			//Print("highZigZagApexPriceLevel " + highZigZagApexPriceLevel);
+			//Print("lowZigZagApexPriceLevel " + lowZigZagApexPriceLevel);
+			
+			//Print("highZigZagApexPrice " + highZigZagApexPrice);
+			//Print("lowZigZagApexPrice " + lowZigZagApexPrice);
+			
+			
+			//Print("isTrendOnPeriodDown " + isTrendOnPeriodDown);
+			//Print("isTrendOnPeriodLevelDown " + isTrendOnPeriodLevelDown);
 			
 
+			//Print("startBar -> " + startBar);
+			//Print("endBar -> " + endBar);
 			
-			DrawVerticalLine("firstPeriod", CurrentBar - startBar - GetProcentValue(periodOfCalculate, FirstDiapason), Color.Orange);
-			DrawVerticalLine("secondPeriod", CurrentBar - endBar + GetProcentValue(periodOfCalculate, ThirtDiapason), Color.Orange);
+			bool isUpdateBars = false;
+			bool isUpdateBuyLevel = false;
+			bool isUpdateSellLevel = false;
 			
-			
-			int firstDiapasonEnd = startBar + GetProcentValue(periodOfCalculate, FirstDiapason);
-			int thirtDiapasoneStart = endBar - GetProcentValue(periodOfCalculate, ThirtDiapason);
-			
-			double firstDiapasoneApex;
-			double thirtDiapasoneApex;
-			
-			if(isDiapasoned){
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						//firstDiapasoneApex = GetApex(true, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(false, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
+			if((isTrendOnPeriodLevelDown == true && isTrendOnPeriodDown == true) 
+					|| (isTrendOnPeriodLevelDown == false && isTrendOnPeriodDown == false)){
+				if(isTrendOnPeriodDown){
+					if(lowZigZagApexPrice < lowZigZagApexPriceLevel){
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
 						
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(true, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, thirtDiapasoneStart, endBar);
-						
+						endBarLevel = endBar;
+						isUpdateBars = true;
+						//Print("update low Apex");
 					}
-					else{
-						//firstDiapasoneApex = GetApex(false, startBar, firstDiapasonEnd);
-						//thirtDiapasoneApex = GetApex(true, thirtDiapasoneStart, endBar);
-						//Print("firstDiapasoneApex " + firstDiapasoneApex);
-						//Print("thirtDiapasoneApex " + thirtDiapasoneApex);
+					else
+						return;
+				}
+				else{
+					if(highZigZagApexPrice > highZigZagApexPriceLevel){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
 						
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, firstDiapasonEnd);
-						secondLevelPrice = GetLowOrHighPriceOfBar(false, firstDiapasonEnd, thirtDiapasoneStart);
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, thirtDiapasoneStart, endBar);
+						endBarLevel = endBar;
+						isUpdateBars = true;
+						//Print("update high Apex");
 					}
-					isChangePeriod = false;
-					//firstLevelPrice = GetAverageBetweenLevel(firstDiapasoneApex, firstLevelPrice, FirstDiapasonPriceDifferent);
-					//thirdLevelPrice = GetAverageBetweenLevel(thirtDiapasoneApex, thirdLevelPrice, ThirtDiapasonPriceDifferent);
+					else
+						return;
 				}
 			}
 			else{
-				if(startBar < endBar && isChangePeriod){
-					if(isTrendOnPeriodDown){
-						firstLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
+				if(isTrendOnPeriodLevelDown && !isTrendOnPeriodDown){
+					if( highZigZagApexPriceLevel  < highZigZagApexPrice + differentPriceBetweenLevelApex){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
+						
+						startBarLevel = endBarLevel;
+						endBarLevel = highBarPeriod - 1;
+						
+						isUpdateBars = false;
+						isUpdateSellLevel = true;
+						//Print("add high Apex");
 					}
-					else{
-						firstLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
-						secondLevelPrice = 0;
-						thirdLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
+					else
+						return;
+				}
+				else if(!isTrendOnPeriodLevelDown && isTrendOnPeriodDown){
+					if(lowZigZagApexPriceLevel  + differentPriceBetweenLevelApex > lowZigZagApexPrice){
+						highZigZagApexPriceLevel = highZigZagApexPrice;
+						lowZigZagApexPriceLevel = lowZigZagApexPrice;
+
+						startBarLevel = endBarLevel;
+						endBarLevel = lowBarPeriod - 1;
+						
+						isUpdateBars = false;
+						isUpdateBuyLevel = true;
+						//Print("add low Apex");
 					}
-					isChangePeriod = false;
+					else
+						return;
+				}
+			}
+			
+			if(isUpdateBars){
+				if(isTrendOnPeriodDown){
+					lowZigZagApexPriceLevel = lowZigZagApexPrice;
+				}
+				else{
+					highZigZagApexPriceLevel = highZigZagApexPrice;
+				}
+			}
+			else{
+				highZigZagApexPriceLevel = highZigZagApexPrice;
+				lowZigZagApexPriceLevel = lowZigZagApexPrice;
+			}
+			
+			//----------------------------------------------------------//
+			int startBarLevelForDiapasone = startBarLevel;
+			int endBarLevelForDiapasone = endBarLevel;
+			if(startBarLevel - LeftZigZag > 0){
+				
+				DrawVerticalLine("startPeriodZigZag", CurrentBar - startBarLevelForDiapasone, Color.Yellow, DashStyle.Dash, 2);
+				DrawVerticalLine("endPeriodZigZag", CurrentBar - endBarLevelForDiapasone, Color.Yellow, DashStyle.Dash, 2);
+				
+				startBarLevelForDiapasone = startBarLevelForDiapasone - LeftZigZag;
+				endBarLevelForDiapasone = endBarLevelForDiapasone + RightZigZag;
+
+				DrawVerticalLine("startPeriodWithIntend", CurrentBar - startBarLevelForDiapasone, Color.DarkBlue, DashStyle.Dash, 4);
+				DrawVerticalLine("endPeriodWithIntend", CurrentBar - endBarLevelForDiapasone, Color.DarkBlue, DashStyle.Dash, 4);
+			}
+	
+			
+			
+			periodOfCalculate = endBarLevelForDiapasone - startBarLevelForDiapasone;
+			int firstDiapasonEnd = startBarLevelForDiapasone + GetProcentValue(periodOfCalculate, FirstDiapason);
+			int thirtDiapasoneStart = endBarLevelForDiapasone - GetProcentValue(periodOfCalculate, ThirtDiapason);
+
+
+			
+			isTrendOnPeriodLevelDown = isTrendOnPeriodDown;
+			if(!isUpdateBars){
+				if(isDiapasoned){
+					if(startBarLevelForDiapasone < endBarLevelForDiapasone && isChangePeriod){
+						if(isTrendOnPeriodDown){
+							if(isUpdateSellLevel)
+								firstLevelPrice = GetLowOrHighPriceOfBar(true, startBarLevelForDiapasone, firstDiapasonEnd);
+							if(isUpdateSellLevel)
+								secondLevelPrice = GetLowOrHighPriceOfBar(true, firstDiapasonEnd, thirtDiapasoneStart);
+							if(isUpdateBuyLevel)
+								thirdLevelPrice = GetLowOrHighPriceOfBar(false, thirtDiapasoneStart, endBarLevelForDiapasone);
+						
+						}
+						else{
+							if(isUpdateBuyLevel)
+								firstLevelPrice = GetLowOrHighPriceOfBar(false, startBarLevelForDiapasone, firstDiapasonEnd);
+							if(isUpdateBuyLevel)
+								secondLevelPrice = GetLowOrHighPriceOfBar(false, firstDiapasonEnd, thirtDiapasoneStart);
+							if(isUpdateSellLevel)
+								thirdLevelPrice = GetLowOrHighPriceOfBar(true, thirtDiapasoneStart, endBarLevelForDiapasone);
+							
+							
+						}
+						isChangePeriod = false;
+					}
+				}
+				else{
+					if(startBarLevelForDiapasone < endBarLevelForDiapasone && isChangePeriod){
+						if(isTrendOnPeriodDown){
+							if(isUpdateSellLevel)
+								firstLevelPrice = GetLowOrHighPriceOfBar(true, startBarLevelForDiapasone, endBarLevelForDiapasone);
+							
+								secondLevelPrice = 0;
+							
+							if(isUpdateBuyLevel)
+								thirdLevelPrice = GetLowOrHighPriceOfBar(false, startBarLevelForDiapasone, endBarLevelForDiapasone);
+							
+						}
+						else{
+							if(isUpdateBuyLevel)
+								firstLevelPrice = GetLowOrHighPriceOfBar(false, startBarLevelForDiapasone, endBarLevelForDiapasone);
+							secondLevelPrice = 0;
+							if(isUpdateSellLevel)
+								thirdLevelPrice = GetLowOrHighPriceOfBar(true, startBarLevelForDiapasone, endBarLevelForDiapasone);
+								
+						}
+						isChangePeriod = false;
+					}
 				}
 			
 			}
 
+
+			//DrawHorizontalLine("level1", firstLevelPrice, Color.Red);
+			//DrawHorizontalLine("level2", secondLevelPrice, Color.Green);
+			//DrawHorizontalLine("level3", thirdLevelPrice, Color.Blue);
 			
-			Print("firstLevelPrice -> " + firstLevelPrice);
-			DrawHorizontalLine("firstLevelPrice", firstLevelPrice, Color.Red);
 			
-			Print("secondLevelPrice -> " + secondLevelPrice);
-			DrawHorizontalLine("secondLevelPrice", secondLevelPrice, Color.Gold);
 			
-			Print("thirdLevelPrice -> " + thirdLevelPrice);
-			DrawHorizontalLine("thirdLevelPrice", thirdLevelPrice, Color.Green);
-		}	
-	
-	
-		private double GetAverageBetweenLevel(double apex, double level, double priceDifferent){
-			if(Math.Abs(apex * TickSize - level * TickSize) > priceDifferent)
-				return Math.Round((apex + level) / 2, 1);
-			else
-				return level;
+			//Print("firstLevelPrice " + firstLevelPrice);
+			//Print("secondLevelPrice " + secondLevelPrice);
+			//Print("thirdLevelPrice " + thirdLevelPrice);
 		}
+	
+	
+
 	
 	
 		private int GetProcentValue(double value, int procent){
 			return Convert.ToInt32((value/100) * procent);
-		}
-	
-		private double GetApex(bool isFoundLowPriceOnBar, int startBar, int endBar){
-			
-			double low = Low[CurrentBar - startBar];
-			double high = High[CurrentBar - startBar];
-			int start = CurrentBar - startBar;
-			int end = CurrentBar - endBar;
-
-			for(;start > end; start--){
-				if(isFoundLowPriceOnBar){
-					if(low > Low[start]){
-						low = Low[start];
-					}
-				}
-				else{
-					if(high < High[start]){
-						high = High[start];
-					}
-				}
-			}
-			
-			if(isFoundLowPriceOnBar)
-				return low;
-			else
-				return high;
 		}
 		
 	
@@ -399,84 +466,38 @@ namespace NinjaTrader.Indicator
 			double high = High[CurrentBar - startBar];
 			int start = CurrentBar - startBar;
 			int end = CurrentBar - endBar;
-			//Print("Start -> " + start);
-			//Print("End -> " + end);
+			
+			int highBar = 0;
+			int lowBar = 0;
 			for(;start > end; start--){
 				if(isFoundLowPriceOnBar){
 					if(low < Low[start]){
 						low = Low[start];
+						lowBar = start;
 					}
 				}
 				else{
 					if(high > High[start]){
 						high = High[start];
+						highBar = start;
 					}
 				}
 			}
 			
-			if(isFoundLowPriceOnBar)
+			if(isFoundLowPriceOnBar){
+				DrawLine("lowBar", lowBar, low, -1, low, Color.Red);
 				return low;
-			else
+			}
+			else{
+				DrawLine("highBar", highBar, high, -1, high, Color.Blue);
 				return high;
-		}
-		
-		
-		private void RSIUpdateOnBar(){
-			if (CurrentBar == 0)
-			{
-				down.Set(0);
-				up.Set(0);
-
-                if (Period < 3)
-                    //Avg.Set(50);
-				return;
 			}
-
-			down.Set(Math.Max(Input[1] - Input[0], 0));
-			up.Set(Math.Max(Input[0] - Input[1], 0));
-
-			if ((CurrentBar + 1) < Period) 
-			{
-				if ((CurrentBar + 1) == (Period - 1))
-					//Avg.Set(50);
-				return;
-			}
-
-			if ((CurrentBar + 1) == Period) 
-			{
-				// First averages 
-				avgDown.Set(SMA(down, Period)[0]);
-				avgUp.Set(SMA(up, Period)[0]);
-			}  
-			else 
-			{
-				// Rest of averages are smoothed
-				avgDown.Set((avgDown[1] * (Period - 1) + down[0]) / Period);
-				avgUp.Set((avgUp[1] * (Period - 1) + up[0]) / Period);
-			}
-
-		 	rsi	  = avgDown[0] == 0 ? 100 : 100 - 100 / (1 + avgUp[0] / avgDown[0]);
-			rsiAvg = (2.0 / (1 + Smooth)) * rsi + (1 - (2.0 / (1 + Smooth))) * rsiAvg;
-			
-			if((rsiAvg < 70 && rsi < 70) && (rsiAvg > 30 && rsi > 30)){
-				isCanSellRSI = false;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg > 70 && rsi > 70){
-				isCanSellRSI = true;
-				isCanBuyRSI = false;
-			}
-			else if(rsiAvg < 30 && rsi < 30){
-				isCanSellRSI = false;
-				isCanBuyRSI = true;
-			}
-
-			//Avg.Set(rsiAvg);
-			//Value.Set(rsi);
 		}
 		
 		
 		
+		
+		#region ZigZag
 		private void ZigZagUpdateOnBar(){
 		if (CurrentBar < 2) // need 3 bars to calculate Low/High
 			{
@@ -486,7 +507,6 @@ namespace NinjaTrader.Indicator
 				zigZagLowZigZags.Set(0);
 				return;
 			}
-
 			// Initialization
 			if (lastSwingPrice == 0.0)
 				lastSwingPrice = Input[0];
@@ -512,8 +532,6 @@ namespace NinjaTrader.Indicator
 			bool isOverLowDeviation		= (deviationType == DeviationType.Percent && IsPriceGreater(lastSwingPrice * (1.0 - deviationValue * 0.01), lowSeries[1]))
 										|| (deviationType == DeviationType.Points && IsPriceGreater(lastSwingPrice - deviationValue, lowSeries[1]));
 
-			//Print("--------------");
-			
 			double	saveValue	= 0.0;
 			bool	addHigh		= false; 
 			bool	addLow		= false; 
@@ -575,22 +593,27 @@ namespace NinjaTrader.Indicator
 					zigZagHighSeries.Set(1, currentZigZagHigh);
 					//Value.Set(1, currentZigZagHigh);
 					
+
 					
 					if(addHigh && !updateHigh){
 						if(lastLowBarPeriod != lowBar){
 							lastLowBarPeriod = lowBarPeriod;
 							lowBarPeriod = lowBar;
+							
+							if(UseHighLow)
+								lowZigZagApexPrice = Low[CurrentBar - lowBar + 1];
+							else
+								lowZigZagApexPrice = Close[CurrentBar - lowBar + 1];
 						}
 						highBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add High");
-						Print("lowBarPeriod -> " + lowBarPeriod);
+						
 					}
 					if(!addHigh && updateHigh){
 						highBar = CurrentBar;
-						Print("update High");
-						Print("highBar -> " + highBar);
 					}
+					
+						
 					
 					
 				}
@@ -602,23 +625,29 @@ namespace NinjaTrader.Indicator
 					currentZigZagLow = saveValue;
 					zigZagLowSeries.Set(1, currentZigZagLow);
 					//Value.Set(1, currentZigZagLow);
-										
+					
 					if(addLow && !updateLow){
 						
 						if(lastHighBarPeriod != highBar){
 							lastHighBarPeriod = highBarPeriod;
 							highBarPeriod = highBar;
+							
+							if(UseHighLow)
+								highZigZagApexPrice = High[CurrentBar - highBar + 1];
+							else
+								highZigZagApexPrice = Close[CurrentBar - highBar + 1];
+							
 						}
 						lowBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add Low");
-						Print("highBarPeriod ->" + highBarPeriod);
 					}
 					if(!addLow && updateLow){
 						lowBar = CurrentBar;
-						Print("update Low");
-						Print("lowBar -> " + lowBar);
 					}
+					
+					
+					
+					
 				}
 
 				lastSwingIdx	= CurrentBar - 1;
@@ -627,8 +656,8 @@ namespace NinjaTrader.Indicator
 
 			zigZagHighSeries.Set(currentZigZagHigh);
 			zigZagLowSeries.Set(currentZigZagLow);
-	
 		}
+		#endregion
 		
 		private bool IsPriceGreater(double a, double b)
 		{
@@ -650,25 +679,12 @@ namespace NinjaTrader.Indicator
        #region Properties	
 		
 
-				
-		[Description("Установить нижний уровень RSA")]
-		[GridCategory("_RSI")]
-		public int LowRSI
-		{
-			get{return _lowRSI;}
-			set{_lowRSI = value;}
-		}
-		
-		[Description("Установить нижний уровень RSA")]
-		[GridCategory("_RSI")]
-		public int HighRSI
-		{
-			get{return _highRSI;}
-			set{_highRSI = value;}
-		}
 		
 		
-		[Description("Is 3 diapasone in zigzag")]
+		
+
+		
+		[Description("If true - 3 diapasone in zigzag")]
 		[GridCategory("Diapasone")]
 		public bool IsDiapasoned
 		{
@@ -692,24 +708,7 @@ namespace NinjaTrader.Indicator
 			set{_rightZigZag = value;}
 		}
 
-		
-		
-		[Description("Установить период подсчёта")]
-        [GridCategory("_RSI")]
-        public int Period
-        {
-            get { return _period; }
-            set { _period = Math.Max(1, value); }
-        }
-	
-		[Description("Установить степень сглаживания. Чем меньше тем ближе линии друг к другу.")]
-		[GridCategory("_RSI")]
-		public int Smooth
-		{
-			get { return smooth; }
-			set { smooth = Math.Max(1, value); }
-		}
-		
+
  		[Description("Ожидание свечек после закрытия ордера")]
         [Category("_Time Out")]
         public int WaitBarsAfterCloseOrder 
@@ -735,14 +734,7 @@ namespace NinjaTrader.Indicator
           set{firstDiapason = value;}
         }
 		
-		/*[Description("Диапазон в %")]
-        [Category("Diapason")]
-        public int SecondDiapason 
-        {
-          get{return Convert.ToInt32(100/secondDiapason);}
-          set{secondDiapason = value;}
-        }
-		*/
+
 		[Description("Диапазон в %")]
         [Category("Diapason")]
         public int ThirtDiapason 
@@ -799,7 +791,7 @@ namespace NinjaTrader.Indicator
 		
 		[Description("Ордера")]
         [GridCategory("OrderParameters")]
-        public int ProfitTarget
+        public double ProfitTarget
         {
           get{return profitTarget;}
           set{profitTarget = value;}
@@ -807,27 +799,44 @@ namespace NinjaTrader.Indicator
 		
 		[Description("Ордера")]
         [GridCategory("OrderParameters")]
-        public int StopLoss
+        public double StopLoss
         {
           get{return stopLoss;}
           set{stopLoss = value;}
         }
 		
-		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
-        [GridCategory("Worked Time")]
-        public int StartTimeTrading
-        {
-          get{return startTimeTrading;}
-          set{startTimeTrading = value;}
-        }
 		
-		[Description("Worked Time. 9:15 AM = 91500 , 8:45 PM = 204500")]
-        [GridCategory("Worked Time")]
-        public int EndTimeTrading
-        {
-          get{return endTimeTrading;}
-          set{endTimeTrading = value;}
-        }
+		[Description("Numbers of bars used for calculations")]
+		[GridCategory("SMA Parameters")]
+		public int SMAPeriod
+		{
+			get { return smaPeriod; }
+			set { smaPeriod = Math.Max(1, value); }
+		}
+		
+		[Description("Numbers of bars used for calculations")]
+		[GridCategory("SMA Parameters")]
+		public int DayOfSMAValot
+		{
+			get { return dayOfSMAValot; }
+			set { dayOfSMAValot = Math.Max(1, value); }
+		}
+		
+		[Description("Numbers of bars used for calculations")]
+		[GridCategory("SMA Parameters")]
+		public int ProcentFromMiddleValot
+		{
+			get { return procentFromMiddleValot; }
+			set { procentFromMiddleValot = Math.Max(1, value); }
+		}
+		
+		[Description("Numbers of bars used for calculations")]
+		[GridCategory("_ZigZag")]
+		public int UpdateAfterChangeZigZagProcent
+		{
+			get { return updateAfterChangeZigZagProcent; }
+			set { updateAfterChangeZigZagProcent = Math.Max(1, value); }
+		}
 		
 		
 		
@@ -860,56 +869,52 @@ namespace NinjaTrader.Indicator
         /// Enter the description of your new custom indicator here
         /// </summary>
         /// <returns></returns>
-        public AqueGenNinjaBot AqueGenNinjaBot(DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public AqueGenNinjaBot AqueGenNinjaBot(int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
-            return AqueGenNinjaBot(Input, deviationType, deviationValue, endTimeTrading, highRSI, isDiapasoned, leftZigZag, lowRSI, period, profitTarget, rightZigZag, smooth, startTimeTrading, stopLoss, useHighLow);
+            return AqueGenNinjaBot(Input, dayOfSMAValot, deviationType, deviationValue, isDiapasoned, leftZigZag, procentFromMiddleValot, profitTarget, rightZigZag, sMAPeriod, stopLoss, updateAfterChangeZigZagProcent, useHighLow);
         }
 
         /// <summary>
         /// Enter the description of your new custom indicator here
         /// </summary>
         /// <returns></returns>
-        public AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
             if (cacheAqueGenNinjaBot != null)
                 for (int idx = 0; idx < cacheAqueGenNinjaBot.Length; idx++)
-                    if (cacheAqueGenNinjaBot[idx].DeviationType == deviationType && Math.Abs(cacheAqueGenNinjaBot[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheAqueGenNinjaBot[idx].EndTimeTrading == endTimeTrading && cacheAqueGenNinjaBot[idx].HighRSI == highRSI && cacheAqueGenNinjaBot[idx].IsDiapasoned == isDiapasoned && cacheAqueGenNinjaBot[idx].LeftZigZag == leftZigZag && cacheAqueGenNinjaBot[idx].LowRSI == lowRSI && cacheAqueGenNinjaBot[idx].Period == period && cacheAqueGenNinjaBot[idx].ProfitTarget == profitTarget && cacheAqueGenNinjaBot[idx].RightZigZag == rightZigZag && cacheAqueGenNinjaBot[idx].Smooth == smooth && cacheAqueGenNinjaBot[idx].StartTimeTrading == startTimeTrading && cacheAqueGenNinjaBot[idx].StopLoss == stopLoss && cacheAqueGenNinjaBot[idx].UseHighLow == useHighLow && cacheAqueGenNinjaBot[idx].EqualsInput(input))
+                    if (cacheAqueGenNinjaBot[idx].DayOfSMAValot == dayOfSMAValot && cacheAqueGenNinjaBot[idx].DeviationType == deviationType && Math.Abs(cacheAqueGenNinjaBot[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheAqueGenNinjaBot[idx].IsDiapasoned == isDiapasoned && cacheAqueGenNinjaBot[idx].LeftZigZag == leftZigZag && cacheAqueGenNinjaBot[idx].ProcentFromMiddleValot == procentFromMiddleValot && Math.Abs(cacheAqueGenNinjaBot[idx].ProfitTarget - profitTarget) <= double.Epsilon && cacheAqueGenNinjaBot[idx].RightZigZag == rightZigZag && cacheAqueGenNinjaBot[idx].SMAPeriod == sMAPeriod && Math.Abs(cacheAqueGenNinjaBot[idx].StopLoss - stopLoss) <= double.Epsilon && cacheAqueGenNinjaBot[idx].UpdateAfterChangeZigZagProcent == updateAfterChangeZigZagProcent && cacheAqueGenNinjaBot[idx].UseHighLow == useHighLow && cacheAqueGenNinjaBot[idx].EqualsInput(input))
                         return cacheAqueGenNinjaBot[idx];
 
             lock (checkAqueGenNinjaBot)
             {
+                checkAqueGenNinjaBot.DayOfSMAValot = dayOfSMAValot;
+                dayOfSMAValot = checkAqueGenNinjaBot.DayOfSMAValot;
                 checkAqueGenNinjaBot.DeviationType = deviationType;
                 deviationType = checkAqueGenNinjaBot.DeviationType;
                 checkAqueGenNinjaBot.DeviationValue = deviationValue;
                 deviationValue = checkAqueGenNinjaBot.DeviationValue;
-                checkAqueGenNinjaBot.EndTimeTrading = endTimeTrading;
-                endTimeTrading = checkAqueGenNinjaBot.EndTimeTrading;
-                checkAqueGenNinjaBot.HighRSI = highRSI;
-                highRSI = checkAqueGenNinjaBot.HighRSI;
                 checkAqueGenNinjaBot.IsDiapasoned = isDiapasoned;
                 isDiapasoned = checkAqueGenNinjaBot.IsDiapasoned;
                 checkAqueGenNinjaBot.LeftZigZag = leftZigZag;
                 leftZigZag = checkAqueGenNinjaBot.LeftZigZag;
-                checkAqueGenNinjaBot.LowRSI = lowRSI;
-                lowRSI = checkAqueGenNinjaBot.LowRSI;
-                checkAqueGenNinjaBot.Period = period;
-                period = checkAqueGenNinjaBot.Period;
+                checkAqueGenNinjaBot.ProcentFromMiddleValot = procentFromMiddleValot;
+                procentFromMiddleValot = checkAqueGenNinjaBot.ProcentFromMiddleValot;
                 checkAqueGenNinjaBot.ProfitTarget = profitTarget;
                 profitTarget = checkAqueGenNinjaBot.ProfitTarget;
                 checkAqueGenNinjaBot.RightZigZag = rightZigZag;
                 rightZigZag = checkAqueGenNinjaBot.RightZigZag;
-                checkAqueGenNinjaBot.Smooth = smooth;
-                smooth = checkAqueGenNinjaBot.Smooth;
-                checkAqueGenNinjaBot.StartTimeTrading = startTimeTrading;
-                startTimeTrading = checkAqueGenNinjaBot.StartTimeTrading;
+                checkAqueGenNinjaBot.SMAPeriod = sMAPeriod;
+                sMAPeriod = checkAqueGenNinjaBot.SMAPeriod;
                 checkAqueGenNinjaBot.StopLoss = stopLoss;
                 stopLoss = checkAqueGenNinjaBot.StopLoss;
+                checkAqueGenNinjaBot.UpdateAfterChangeZigZagProcent = updateAfterChangeZigZagProcent;
+                updateAfterChangeZigZagProcent = checkAqueGenNinjaBot.UpdateAfterChangeZigZagProcent;
                 checkAqueGenNinjaBot.UseHighLow = useHighLow;
                 useHighLow = checkAqueGenNinjaBot.UseHighLow;
 
                 if (cacheAqueGenNinjaBot != null)
                     for (int idx = 0; idx < cacheAqueGenNinjaBot.Length; idx++)
-                        if (cacheAqueGenNinjaBot[idx].DeviationType == deviationType && Math.Abs(cacheAqueGenNinjaBot[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheAqueGenNinjaBot[idx].EndTimeTrading == endTimeTrading && cacheAqueGenNinjaBot[idx].HighRSI == highRSI && cacheAqueGenNinjaBot[idx].IsDiapasoned == isDiapasoned && cacheAqueGenNinjaBot[idx].LeftZigZag == leftZigZag && cacheAqueGenNinjaBot[idx].LowRSI == lowRSI && cacheAqueGenNinjaBot[idx].Period == period && cacheAqueGenNinjaBot[idx].ProfitTarget == profitTarget && cacheAqueGenNinjaBot[idx].RightZigZag == rightZigZag && cacheAqueGenNinjaBot[idx].Smooth == smooth && cacheAqueGenNinjaBot[idx].StartTimeTrading == startTimeTrading && cacheAqueGenNinjaBot[idx].StopLoss == stopLoss && cacheAqueGenNinjaBot[idx].UseHighLow == useHighLow && cacheAqueGenNinjaBot[idx].EqualsInput(input))
+                        if (cacheAqueGenNinjaBot[idx].DayOfSMAValot == dayOfSMAValot && cacheAqueGenNinjaBot[idx].DeviationType == deviationType && Math.Abs(cacheAqueGenNinjaBot[idx].DeviationValue - deviationValue) <= double.Epsilon && cacheAqueGenNinjaBot[idx].IsDiapasoned == isDiapasoned && cacheAqueGenNinjaBot[idx].LeftZigZag == leftZigZag && cacheAqueGenNinjaBot[idx].ProcentFromMiddleValot == procentFromMiddleValot && Math.Abs(cacheAqueGenNinjaBot[idx].ProfitTarget - profitTarget) <= double.Epsilon && cacheAqueGenNinjaBot[idx].RightZigZag == rightZigZag && cacheAqueGenNinjaBot[idx].SMAPeriod == sMAPeriod && Math.Abs(cacheAqueGenNinjaBot[idx].StopLoss - stopLoss) <= double.Epsilon && cacheAqueGenNinjaBot[idx].UpdateAfterChangeZigZagProcent == updateAfterChangeZigZagProcent && cacheAqueGenNinjaBot[idx].UseHighLow == useHighLow && cacheAqueGenNinjaBot[idx].EqualsInput(input))
                             return cacheAqueGenNinjaBot[idx];
 
                 AqueGenNinjaBot indicator = new AqueGenNinjaBot();
@@ -920,19 +925,17 @@ namespace NinjaTrader.Indicator
                 indicator.MaximumBarsLookBack = MaximumBarsLookBack;
 #endif
                 indicator.Input = input;
+                indicator.DayOfSMAValot = dayOfSMAValot;
                 indicator.DeviationType = deviationType;
                 indicator.DeviationValue = deviationValue;
-                indicator.EndTimeTrading = endTimeTrading;
-                indicator.HighRSI = highRSI;
                 indicator.IsDiapasoned = isDiapasoned;
                 indicator.LeftZigZag = leftZigZag;
-                indicator.LowRSI = lowRSI;
-                indicator.Period = period;
+                indicator.ProcentFromMiddleValot = procentFromMiddleValot;
                 indicator.ProfitTarget = profitTarget;
                 indicator.RightZigZag = rightZigZag;
-                indicator.Smooth = smooth;
-                indicator.StartTimeTrading = startTimeTrading;
+                indicator.SMAPeriod = sMAPeriod;
                 indicator.StopLoss = stopLoss;
+                indicator.UpdateAfterChangeZigZagProcent = updateAfterChangeZigZagProcent;
                 indicator.UseHighLow = useHighLow;
                 Indicators.Add(indicator);
                 indicator.SetUp();
@@ -958,18 +961,18 @@ namespace NinjaTrader.MarketAnalyzer
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
-        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
-            return _indicator.AqueGenNinjaBot(Input, deviationType, deviationValue, endTimeTrading, highRSI, isDiapasoned, leftZigZag, lowRSI, period, profitTarget, rightZigZag, smooth, startTimeTrading, stopLoss, useHighLow);
+            return _indicator.AqueGenNinjaBot(Input, dayOfSMAValot, deviationType, deviationValue, isDiapasoned, leftZigZag, procentFromMiddleValot, profitTarget, rightZigZag, sMAPeriod, stopLoss, updateAfterChangeZigZagProcent, useHighLow);
         }
 
         /// <summary>
         /// Enter the description of your new custom indicator here
         /// </summary>
         /// <returns></returns>
-        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
-            return _indicator.AqueGenNinjaBot(input, deviationType, deviationValue, endTimeTrading, highRSI, isDiapasoned, leftZigZag, lowRSI, period, profitTarget, rightZigZag, smooth, startTimeTrading, stopLoss, useHighLow);
+            return _indicator.AqueGenNinjaBot(input, dayOfSMAValot, deviationType, deviationValue, isDiapasoned, leftZigZag, procentFromMiddleValot, profitTarget, rightZigZag, sMAPeriod, stopLoss, updateAfterChangeZigZagProcent, useHighLow);
         }
     }
 }
@@ -984,21 +987,21 @@ namespace NinjaTrader.Strategy
         /// </summary>
         /// <returns></returns>
         [Gui.Design.WizardCondition("Indicator")]
-        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
-            return _indicator.AqueGenNinjaBot(Input, deviationType, deviationValue, endTimeTrading, highRSI, isDiapasoned, leftZigZag, lowRSI, period, profitTarget, rightZigZag, smooth, startTimeTrading, stopLoss, useHighLow);
+            return _indicator.AqueGenNinjaBot(Input, dayOfSMAValot, deviationType, deviationValue, isDiapasoned, leftZigZag, procentFromMiddleValot, profitTarget, rightZigZag, sMAPeriod, stopLoss, updateAfterChangeZigZagProcent, useHighLow);
         }
 
         /// <summary>
         /// Enter the description of your new custom indicator here
         /// </summary>
         /// <returns></returns>
-        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, DeviationType deviationType, double deviationValue, int endTimeTrading, int highRSI, bool isDiapasoned, int leftZigZag, int lowRSI, int period, int profitTarget, int rightZigZag, int smooth, int startTimeTrading, int stopLoss, bool useHighLow)
+        public Indicator.AqueGenNinjaBot AqueGenNinjaBot(Data.IDataSeries input, int dayOfSMAValot, DeviationType deviationType, double deviationValue, bool isDiapasoned, int leftZigZag, int procentFromMiddleValot, double profitTarget, int rightZigZag, int sMAPeriod, double stopLoss, int updateAfterChangeZigZagProcent, bool useHighLow)
         {
             if (InInitialize && input == null)
                 throw new ArgumentException("You only can access an indicator with the default input/bar series from within the 'Initialize()' method");
 
-            return _indicator.AqueGenNinjaBot(input, deviationType, deviationValue, endTimeTrading, highRSI, isDiapasoned, leftZigZag, lowRSI, period, profitTarget, rightZigZag, smooth, startTimeTrading, stopLoss, useHighLow);
+            return _indicator.AqueGenNinjaBot(input, dayOfSMAValot, deviationType, deviationValue, isDiapasoned, leftZigZag, procentFromMiddleValot, profitTarget, rightZigZag, sMAPeriod, stopLoss, updateAfterChangeZigZagProcent, useHighLow);
         }
     }
 }
