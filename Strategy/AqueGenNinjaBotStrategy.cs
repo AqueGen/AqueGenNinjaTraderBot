@@ -550,9 +550,16 @@ namespace NinjaTrader.Strategy
 		}	
 		
 		
-		public class Node<T>{
+		public class Node{
 			
-			public Node(){}
+			public Node NextZigZagDictionary{get;set;}
+			public Node PreviusZigZagDictionary{get;set;}
+			
+			public ZigZagDictionary ZigZagDictionary{get;set;}
+			
+			public Node(ZigZagDictionary zigZagDictionary){
+				ZigZagDictionary = zigZagDictionary;
+			}
 		
 		}
 		
