@@ -101,13 +101,7 @@ namespace NinjaTrader.Strategy
 		//Orders
 		private double stopLoss = 10;
 		private double profitTarget = 50;
-		
-		
-		
-		private int startTimeTrading = 91500;
-		private int endTimeTrading = 204500;
-		
-		
+			
 		
 		//Analog RSI
 		private double lowLineRSIAnalog = 0;
@@ -122,10 +116,18 @@ namespace NinjaTrader.Strategy
 		
 		
 		//ZigZag history
-		private ZigZagHistory zigZagHistory;
-		private DailyZigZag dailyZigZag;
+		private HistoryData historyData;
+		private DailyData dailyData;
+		private ZigZagDiapasone zigZagDiapasone;
+		private OnBarData onBarData;
+		private PriceVolume priceVolume;
+		
+		private double highZigZagPrice = 0;
+		private double lowZigZagPrice = 0;
 		
 		private int _saveZigZagDaysOnHistory = 60;
+		
+		private int stopLossLevel = 0;
 		
         /// <summary>
         /// This method is used to configure the strategy and is called once before any strategy method is called.
@@ -155,8 +157,12 @@ namespace NinjaTrader.Strategy
 			Add(PeriodType.Tick, 1);
 			Add(PeriodType.Day, 1);
 			
-			zigZagHistory = new ZigZagHistory(SaveZigZagDaysOnHistory);
-			dailyZigZag = new DailyZigZag(Time[0]);
+			historyData = new HistoryData(SaveZigZagDaysOnHistory);
+			dailyData = new DailyData(Time[0]);
+			zigZagDiapasone = new ZigZagDiapasone();
+			onBarData = new OnBarData(0);
+			priceVolume = new PriceVolume();
+			
         }
 
         /// <summary>
@@ -195,6 +201,19 @@ namespace NinjaTrader.Strategy
 				
 				OnBarUpdateMain();
 				Print(Time[0].ToString());
+				
+				
+				//onBarData.PriceVolumeList.AddPriceVolume(priceVolume);
+				Print("test " + onBarData.PriceVolumeList.VolumePriceOnBar.Count);
+				foreach(KeyValuePair<double, int> a in onBarData.PriceVolumeList.VolumePriceOnBar){
+					string test = string.Format("Price: {0}, count: {1}", a.Key, a.Value);
+					Print(test);
+				}
+				
+				dailyData.OnBarDataList.Add(onBarData);
+				priceVolume = new PriceVolume();
+				onBarData = new OnBarData(CurrentBar);
+				
 			}
 			
 			 if(BarsInProgress == 1){	
@@ -203,38 +222,54 @@ namespace NinjaTrader.Strategy
 				_lastPrice = Price;
 				Price = openPrice;
 
+				double formula = ProfitTarget * TickSize;
+				
 				if(isSellOrder){
-					if(Price > (startOrderPrice + (ProfitTarget * TickSize * 0.3))){
-						SetStopLoss(CalculationMode.Price, startOrderPrice);
+					/*if(Price < (startOrderPrice - (formula * 0.6)) && stopLossLevel == 1){
+						Print("Test 1");
+						stopLossLevel = 2;
+						SetStopLoss(CalculationMode.Price, startOrderPrice - (formula * 0.3));
+						Print(startOrderPrice - (formula * 0.3));
+					}	
+					else */
+					if(Price < (startOrderPrice - (formula * 0.3)) && stopLossLevel == 0){
+						Print("Test 2");
+						stopLossLevel = 1;
+						SetStopLoss(0);
 					}
 				}
 				else if(isBuyOrder){
-					if(Price < (startOrderPrice - (ProfitTarget * TickSize * 0.3))){
-						SetStopLoss(CalculationMode.Price, startOrderPrice);
+					/*if(Price > (startOrderPrice + (formula * 0.6)) && stopLossLevel == 1){
+						Print("Test 3");
+						stopLossLevel = 2;
+						SetStopLoss(CalculationMode.Price, startOrderPrice + (formula * 0.3));
+						Print(startOrderPrice + (formula * 0.3));
+					}
+					else */
+					if(Price > (startOrderPrice + (formula * 0.3)) && stopLossLevel == 0){
+						Print("Test 4");
+						stopLossLevel = 1;
+						SetStopLoss(0);
 					}
 				}
 				
-				
+				onBarData.PriceVolumeList.AddPriceVolume(Price);
 				BuyOrSell(Price, _lastPrice);
 				
 			}
 			
 			if(BarsInProgress == 2){
 				
-				zigZagHistory.AddDaylyZigZag(dailyZigZag);
+				historyData.AddDaylyZigZag(dailyData);
 				
-				int count = 0;
-				if(dailyZigZag.HighLevelList.Count > dailyZigZag.LowLevelList.Count)
-					count = dailyZigZag.LowLevelList.Count;
-				else
-					count = dailyZigZag.HighLevelList.Count;
-				
+				int count = dailyData.DailyZigZagList.Count;
+
 				for(int i = 0; i < count; i++){
-					Print("Level by Day ->   Index: " + i + " Sell Level: " + dailyZigZag.HighLevelList[i] + " Buy Level: " + dailyZigZag.LowLevelList[i]);
+					Print("Level by Day ->   Index: " + i + " Sell Level: " + dailyData.DailyZigZagList[i].SellLevel + " Buy Level: " + dailyData.DailyZigZagList[i].BuyLevel);
 				}
 				
 				
-				dailyZigZag = new DailyZigZag(Time[0]);
+				dailyData = new DailyData(Time[0]);
 				
 				middleValot = 0;
 				
@@ -260,7 +295,7 @@ namespace NinjaTrader.Strategy
 		//	Print("lowBar -> " + lowBar);
 			//Print("highBar -> " + highBar);
 		
-			Print("Now Bar is -> " + CurrentBar);
+			//Print("Now Bar is -> " + CurrentBar);
 			
 			if(highBarPeriod > lowBarPeriod){
 				isTrendOnPeriodDown = false;
@@ -275,22 +310,34 @@ namespace NinjaTrader.Strategy
 			periodOfCalculate = endBar - startBar;
 			
 			
-			Print("StartPeriod -> " + startBar);
-			Print("EndPeriod -> " + endBar);
+			//Print("StartPeriod -> " + startBar);
+			//Print("EndPeriod -> " + endBar);
 			
 			
 			if(startBar < endBar && isChangePeriod){
 				sellLevelPrice = GetLowOrHighPriceOfBar(true, startBar, endBar);
 				buyLevelPrice = GetLowOrHighPriceOfBar(false, startBar, endBar);
 
-				dailyZigZag.AddHigh(sellLevelPrice);
-				dailyZigZag.AddLow(buyLevelPrice);
+				zigZagDiapasone.BuyLevel = buyLevelPrice;
+				zigZagDiapasone.SellLevel = sellLevelPrice;
+				zigZagDiapasone.LowZigZag = lowZigZagPrice;
+				zigZagDiapasone.HighZigZag = highZigZagPrice;
+
+				
+				Print("zigZagDiapasone.BuyLevel " + zigZagDiapasone.BuyLevel);
+				Print("zigZagDiapasone.SellLevel " + zigZagDiapasone.SellLevel);
+				Print("zigZagDiapasone.LowZigZag " + zigZagDiapasone.LowZigZag);
+				Print("zigZagDiapasone.HighZigZag " + zigZagDiapasone.HighZigZag);
+				
+				dailyData.DailyZigZagList.Add(zigZagDiapasone);
+				
+				zigZagDiapasone = new ZigZagDiapasone();
 				
 				isChangePeriod = false;
 			}
 				
-			Print("sellLevelPrice -> " + sellLevelPrice);
-			Print("buyLevelPrice -> " + buyLevelPrice);
+			//Print("sellLevelPrice -> " + sellLevelPrice);
+			//Print("buyLevelPrice -> " + buyLevelPrice);
 		}
 		
 		
@@ -425,17 +472,24 @@ namespace NinjaTrader.Strategy
 					if(addHigh && !updateHigh){
 						if(lastLowBarPeriod != lowBar){
 							lastLowBarPeriod = lowBarPeriod;
-							lowBarPeriod = lowBar;		
+							lowBarPeriod = lowBar;
+							Print("lowBarPeriod " + (CurrentBar - lowBarPeriod + 1));
+							if (!useHighLow){
+								lowZigZagPrice = Close[CurrentBar - lowBarPeriod + 1];
+							}
+							else{
+								lowZigZagPrice = Low[CurrentBar - lowBarPeriod + 1];
+							}
 						}
 						highBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add High");
-						Print("lowBarPeriod -> " + lowBarPeriod);
+						//Print("add High");
+						//Print("lowBarPeriod -> " + lowBarPeriod);
 					}
 					if(!addHigh && updateHigh){
 						highBar = CurrentBar;
-						Print("update High");
-						Print("highBar -> " + highBar);
+						//Print("update High");
+						//Print("highBar -> " + highBar);
 					}
 					
 					
@@ -454,16 +508,24 @@ namespace NinjaTrader.Strategy
 						if(lastHighBarPeriod != highBar){
 							lastHighBarPeriod = highBarPeriod;
 							highBarPeriod = highBar;
+							Print("highBarPeriod " + (CurrentBar - highBarPeriod + 1));
+							if (!useHighLow){
+								highZigZagPrice = Close[CurrentBar - highBarPeriod+ 1];
+							}
+							else{
+								highZigZagPrice = High[CurrentBar - highBarPeriod+ 1];
+							}
+							
 						}
 						lowBar = CurrentBar;
 						isChangePeriod = true;
-						Print("add Low");
-						Print("highBarPeriod ->" + highBarPeriod);
+						//Print("add Low");
+						//Print("highBarPeriod ->" + highBarPeriod);
 					}
 					if(!addLow && updateLow){
 						lowBar = CurrentBar;
-						Print("update Low");
-						Print("lowBar -> " + lowBar);
+						//Print("update Low");
+						//Print("lowBar -> " + lowBar);
 					}
 					
 					
@@ -509,75 +571,71 @@ namespace NinjaTrader.Strategy
 				isBuyOrder = false;
 				isSellOrder = false;
 				
+				stopLossLevel = 0;
+				
 				SetStopLoss(CalculationMode.Ticks, StopLoss);
 				SetProfitTarget(CalculationMode.Ticks, ProfitTarget);
 				
-				for(int i = 0; i < dailyZigZag.LowLevelList.Count; i++){
-					if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.LowLevelList[i]) && (price < lowLineRSIAnalog)){
-						EnterLong("BuyOrder");
-						Print("OrderAction.Buy");
-						
-						startOrderPrice = price;
-						isBuyOrder = true;
-						
-						
-						Print("price" + price);
-						Print("lastPrice" + lastPrice);
-						Print("Before dayli low if index" + i + " value " + dailyZigZag.LowLevelList[i]);
-						dailyZigZag.LowLevelList[i] = 0;
-						Print("After dayli low if index" + i + " value " + dailyZigZag.LowLevelList[i]);
-					}
-					else{
-						if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.LowLevelList[i]) && !(price < lowLineRSIAnalog)){
-							Print("Before dayli low else index" + i + " value " + dailyZigZag.LowLevelList[i]);
-							dailyZigZag.LowLevelList[i] = 0;
-							Print("After dayli low else index" + i + " value " + dailyZigZag.LowLevelList[i]);
+				foreach(DailyData dayZigZagLevelList in historyData.DailyZigZagList){
+					
+					for(int i = 0; i < dayZigZagLevelList.DailyZigZagList.Count; i++){
+						if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.DailyZigZagList[i].BuyLevel) 
+							&& (price < lowLineRSIAnalog)
+							){
+							EnterLong(2, "BuyOrder");
+							Print("OrderAction.Buy");
+							
+							startOrderPrice = price;
+							isBuyOrder = true;
+							
+							SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].LowZigZag - 10);
+							
+							Print("price" + price);
+							Print("lastPrice" + lastPrice);
+							Print("Before dayli low if index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].BuyLevel);
+							dayZigZagLevelList.DailyZigZagList[i].BuyLevel = 0;
+							Print("After dayli low if index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].BuyLevel);
+							break;
+						}
+					
+					else if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.DailyZigZagList[i].SellLevel)
+							&& (price > highLineRSIAnalog)
+							){
+							EnterShort(2, "SellOrder");
+							Print("OrderAction.Sell");
+							
+							startOrderPrice = price;
+							isSellOrder = true;
+							
+							SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].HighZigZag + 10);
+								
+							Print("price" + price);
+							Print("lastPrice" + lastPrice);
+							Print("Before dayli high if index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].SellLevel);
+							dayZigZagLevelList.DailyZigZagList[i].SellLevel = 0;
+							Print("After dayli high if index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].SellLevel);
+							break;
 						}
 					}
-				}
-				//else
-				for(int i = 0; i < dailyZigZag.HighLevelList.Count; i++){
-					if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.HighLevelList[i]) && (price > highLineRSIAnalog)){
-						EnterShort("SellOrder");
-						Print("OrderAction.Sell");
-						
-						startOrderPrice = price;
-						isSellOrder = true;
-						
-						Print("price" + price);
-						Print("lastPrice" + lastPrice);
-						Print("Before dayli high if index" + i + " value " + dailyZigZag.HighLevelList[i]);
-						dailyZigZag.HighLevelList[i] = 0;
-						Print("After dayli high if index" + i + " value " + dailyZigZag.HighLevelList[i]);
+				
+			
+					for(int i = 0; i < dayZigZagLevelList.DailyZigZagList.Count; i++){
+						if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.DailyZigZagList[i].BuyLevel)){
+								Print("Before dayli low else index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].BuyLevel);
+								dayZigZagLevelList.DailyZigZagList[i].BuyLevel = 0;
+								Print("After dayli low else index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].BuyLevel);
+							}
 					}
-					else{ 
-						if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.HighLevelList[i])){
-							Print("Before dayli high else index" + i + " value " + dailyZigZag.HighLevelList[i]);
-							dailyZigZag.HighLevelList[i] = 0;
-							Print("After dayli high else index" + i + " value " + dailyZigZag.HighLevelList[i]);
+					
+					for(int i = 0; i < dayZigZagLevelList.DailyZigZagList.Count; i++){
+						if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.DailyZigZagList[i].SellLevel)){
+							Print("Before dayli high else index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].SellLevel);
+							dayZigZagLevelList.DailyZigZagList[i].SellLevel = 0;
+							Print("After dayli high else index" + i + " value " + dayZigZagLevelList.DailyZigZagList[i].SellLevel);
 						}
-					}
+					}	
 				}
-				
-				
-				for(int i = 0; i < dailyZigZag.LowLevelList.Count; i++){
-					if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.LowLevelList[i]) && !(price < lowLineRSIAnalog)){
-							Print("Before dayli low else index" + i + " value " + dailyZigZag.LowLevelList[i]);
-							dailyZigZag.LowLevelList[i] = 0;
-							Print("After dayli low else index" + i + " value " + dailyZigZag.LowLevelList[i]);
-						}
-				}
-				
-				for(int i = 0; i < dailyZigZag.HighLevelList.Count; i++){
-					if(IsPriceInOrderPeriod(price, lastPrice, dailyZigZag.HighLevelList[i])){
-						Print("Before dayli high else index" + i + " value " + dailyZigZag.HighLevelList[i]);
-						dailyZigZag.HighLevelList[i] = 0;
-						Print("After dayli high else index" + i + " value " + dailyZigZag.HighLevelList[i]);
-					}
-				}
-				
-				
-			}					
+			}
 		}
 		
 
@@ -591,76 +649,108 @@ namespace NinjaTrader.Strategy
 		}
 		
 		
+		#region Data Objects and Lists
 		
-		public class ZigZagHistory{
+		public class HistoryData{
 
-			private readonly int _dayOfHistory;
+			private readonly int _daysOfHistory;
 
-			private readonly List<DailyZigZag> _dailyZigZagList;
+			public List<DailyData> DailyZigZagList {get; private set;}
 
-			public ZigZagHistory(int days)
+			public HistoryData(int days)
 			{
-				_dayOfHistory = days;
-				_dailyZigZagList = new List<DailyZigZag>();
+				_daysOfHistory = days;
+				DailyZigZagList = new List<DailyData>();
 			}
 
-			public void AddDaylyZigZag(DailyZigZag zigZag)
+			public void AddDaylyZigZag(DailyData zigZag)
 			{
 				Resize();
-				_dailyZigZagList.Add(zigZag);
+				DailyZigZagList.Add(zigZag);
 			}
 
 			private void Resize()
 			{
-				if (_dailyZigZagList.Count > _dayOfHistory)
+				if (DailyZigZagList.Count > _daysOfHistory)
 				{
-					_dailyZigZagList.RemoveAt(0);
+					DailyZigZagList.RemoveAt(0);
 				}
 			}
 
-			public List<DailyZigZag> DailyZigZagList()
+		}
+		
+		
+		public class DailyData
+		{
+
+			public List<ZigZagDiapasone> DailyZigZagList{get; private set;}
+
+			public List<OnBarData> OnBarDataList{get; private set;}
+			
+			public DateTime DailyZigZagDateTime {get; private set; }
+			
+			public DailyData(DateTime dateTime)
 			{
-				return _dailyZigZagList;
+				DailyZigZagDateTime = dateTime;
+				DailyZigZagList = new List<ZigZagDiapasone>();
+				OnBarDataList = new List<OnBarData>();
+			}
+			
+		}
+		
+		public class ZigZagDiapasone{
+			
+			public double BuyLevel{get;set;}
+			public double SellLevel{get;set;}
+			public double HighZigZag{get;set;}
+			public double LowZigZag{get;set;}
+			
+		}
+		
+		#endregion
+		
+		
+		public class OnBarData{
+			
+			public PriceVolume PriceVolumeList{get; private set;}
+			public int BarIndex{get;private set;}
+			
+			public OnBarData(int index){
+				BarIndex = index;
+				PriceVolumeList = new PriceVolume();
 			}
 		}
 		
 		
-		public class DailyZigZag
-		{
-			public List<double> HighLevelList{get;set;}
-			public List<double> LowLevelList{get;set;}
-
-			public DateTime DailyZigZagDateTime { get; set; }
-
-			public int Size{
-				get{
-					return HighLevelList.Count;
-				}
+		public class PriceVolume{
+			
+			public Dictionary<double, int> VolumePriceOnBar {get; private set;}
+			
+			private double _price = 0;
+			public int Size{get; private set;}
+			
+			public PriceVolume(){
+				VolumePriceOnBar = new Dictionary<double, int>();
 			}
 			
-			public DailyZigZag(DateTime dateTime)
-			{
-				DailyZigZagDateTime = dateTime;
-
-				HighLevelList = new List<double>();
-				LowLevelList = new List<double>();
+			public void AddPriceVolume(double price){
+				if(VolumePriceOnBar.ContainsKey(price)){
+					int count = VolumePriceOnBar[price];
+					VolumePriceOnBar.Remove(price);
+					VolumePriceOnBar.Add(price, count + 1);
+				}
+				else{
+					VolumePriceOnBar.Add(price, 1);
+				}
+				_price = price;
+				Size = Size;
 			}
-
-			public void AddHigh(double highLevel)
-			{
-				HighLevelList.Add(highLevel);
+			
+			public override string ToString(){
+				return string.Format("Price is: {0} , value is: {1}", _price, Size);
 			}
-
-			public void AddLow(double lowLevel)
-			{
-				LowLevelList.Add(lowLevel);
-			}
-
-			public override string ToString()
-			{
-				return DailyZigZagDateTime.ToString();
-			}
-		}	
+		}
+		
 		
 		
         #region Properties	
