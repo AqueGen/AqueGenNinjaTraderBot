@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Xml.Serialization;
+using System.Text;
 using NinjaTrader.Cbi;
 using NinjaTrader.Data;
 using NinjaTrader.Indicator;
@@ -86,6 +87,8 @@ namespace NinjaTrader.Strategy
 		private double profitTargetSmall = 30;
 		private double breakeven = 30;
 			
+
+		
 		
 		//Analog RSI
 		private double lowLineRSIAnalog = 0;
@@ -104,12 +107,11 @@ namespace NinjaTrader.Strategy
 		private DailyData dailyData;
 		private ZigZagDiapasone zigZagDiapasone;
 		private OnBarData onBarData;
-		private PriceVolume priceVolume;
 		
 		private double highZigZagPrice = 0;
 		private double lowZigZagPrice = 0;
 		
-		private int _saveZigZagDaysOnHistory = 60;
+		private int _saveZigZagDaysOnHistory = 7;
 		
 		private int stopLossLevel = 0;
 		
@@ -134,7 +136,7 @@ namespace NinjaTrader.Strategy
 			dailyData = new DailyData(Time[0]);
 			zigZagDiapasone = new ZigZagDiapasone(5);
 			onBarData = new OnBarData(0);
-			priceVolume = new PriceVolume();
+			
 			
         }
 
@@ -142,11 +144,7 @@ namespace NinjaTrader.Strategy
         /// Called on each bar update event (incoming tick)
         /// </summary>
 		
-		private bool IsZigZagChangedPosition(int firstBar, int secondBar){
-			return firstBar != secondBar;
-		}
-		
-		
+
         protected override void OnBarUpdate()
         {	
 
@@ -179,7 +177,6 @@ namespace NinjaTrader.Strategy
 				}
 				
 				dailyData.OnBarDataList.Add(onBarData);
-				priceVolume = new PriceVolume();
 				onBarData = new OnBarData(CurrentBar);
 				
 			}
@@ -187,54 +184,24 @@ namespace NinjaTrader.Strategy
 			 if(BarsInProgress == 1){	
 				double openPrice = Opens[1][0];
 			
-				_lastPrice = Price;
-				Price = openPrice;
+				_lastPrice = _price;
+				_price = openPrice;
 
-				StopLossAndTakeProfit(Price);
+				StopLossAndTakeProfit(_price);
 				
 				double volume = Volumes[1][0];
-				onBarData.PriceVolumeOnBar.AddPriceVolume(Price, volume);
-				double currentVolume = onBarData.PriceVolumeOnBar.VolumePriceOnBar[Price];
-				
-				bool isCanInputOrders = false;
-				foreach(DailyData dailyData in historyData.DailyDataList){
-					
-					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
-						
-						double averageVolume = dailyData.GetAveragePriceVolume(5);
-						
-						Print("Price -> " + Price);
-						Print("zigZag.SellLevelWithPostTicks -> " + zigZag.SellLevelWithPostTicks);
-						Print("zigZag.BuyLevelWithPostTicks -> " + zigZag.BuyLevelWithPostTicks);
-						
-						if(Price > zigZag.SellLevelWithPostTicks && Price < zigZag.HighZigZag){
-							if(currentVolume > averageVolume){
-								BuyOrSell(Price, _lastPrice, OrderAction.Sell);
-								Print("Test sell");
-							}
-						}
-						else
-						if(Price < zigZag.BuyLevelWithPostTicks && Price > zigZag.LowZigZag){
-							if(currentVolume > averageVolume){
-								BuyOrSell(Price, _lastPrice, OrderAction.Buy);
-								Print("Test buy");
-							}
-						}
-					}
-				}
-				
-				//historyData.ZigZagDiapasoneList[1].
+				onBarData.PriceVolumeOnBar.AddPriceVolume(_price, volume);
+				double currentVolume = onBarData.PriceVolumeOnBar.VolumePriceOnBar[_price];
 				
 				
+				BuyOrSell(_price, _lastPrice, currentVolume);
 			}
 			
 			if(BarsInProgress == 2){
 				
 				historyData.AddDaylyZigZag(dailyData);
 				
-				int count = dailyData.ZigZagDiapasoneList.Count;
-
-				for(int i = 0; i < count; i++){
+				for(int i = 0; i < dailyData.ZigZagDiapasoneList.Count; i++){
 					Print("Level by Day ->   Index: " + i + " Sell Level: " + dailyData.ZigZagDiapasoneList[i].SellLevel + " Buy Level: " + dailyData.ZigZagDiapasoneList[i].BuyLevel);
 				}
 				
@@ -278,18 +245,20 @@ namespace NinjaTrader.Strategy
 
 				zigZagDiapasone.BuyLevel = buyLevelPrice;
 				zigZagDiapasone.SellLevel = sellLevelPrice;
-				zigZagDiapasone.LowZigZag = lowZigZagPrice;
-				zigZagDiapasone.HighZigZag = highZigZagPrice;
+				zigZagDiapasone.BuyZigZag = lowZigZagPrice;
+				zigZagDiapasone.SellZigZag = highZigZagPrice;
 
 				
 				Print("zigZagDiapasone.BuyLevel " + zigZagDiapasone.BuyLevel);
 				Print("zigZagDiapasone.SellLevel " + zigZagDiapasone.SellLevel);
-				Print("zigZagDiapasone.LowZigZag " + zigZagDiapasone.LowZigZag);
-				Print("zigZagDiapasone.HighZigZag " + zigZagDiapasone.HighZigZag);
+				Print("zigZagDiapasone.LowZigZag " + zigZagDiapasone.BuyZigZag);
+				Print("zigZagDiapasone.HighZigZag " + zigZagDiapasone.SellZigZag);
+				Print("zigZagDiapasone.BuyLevelWithPostTicks " + zigZagDiapasone.BuyLevelWithPostTicks);
+				Print("zigZagDiapasone.SellLevelWithPostTicks " + zigZagDiapasone.SellLevelWithPostTicks);
 				
 				dailyData.ZigZagDiapasoneList.Add(zigZagDiapasone);
 				
-				zigZagDiapasone = new ZigZagDiapasone(5);
+				zigZagDiapasone = new ZigZagDiapasone(0.5);
 				
 				isChangePeriod = false;
 			}
@@ -506,21 +475,24 @@ namespace NinjaTrader.Strategy
 		#endregion
 		
 		
-		
-		/*protected override void OnMarketData(MarketDataEventArgs e)
+		/*
+		protected override void OnMarketData(MarketDataEventArgs e)
 		{
+			Print("test");
 			if (e.MarketDataType == MarketDataType.Last) {
-				double openPrice = Opens[1][0];
-				_lastPrice = Price;
-				Price = e.Price;
+				double openPrice =e.Price;
+			
+				_lastPrice = _price;
+				_price = openPrice;
 
-				StopLossAndTakeProfit(Price);
+				StopLossAndTakeProfit(_price);
 				
-				double volume = e.Volume;
-				Print(string.Format("Price: {0}, volume: {1} ", Price, volume));
+				double volume = Volumes[1][0];
+				onBarData.PriceVolumeOnBar.AddPriceVolume(_price, volume);
+				double currentVolume = onBarData.PriceVolumeOnBar.VolumePriceOnBar[_price];
 				
-				onBarData.PriceVolumeList.AddPriceVolume(Price, volume);
-				BuyOrSell(Price, _lastPrice);
+				
+				BuyOrSell(_price, _lastPrice, currentVolume);
 				
 				
 			}
@@ -530,13 +502,13 @@ namespace NinjaTrader.Strategy
 			double formula = ProfitTargetLarge * TickSize;
 		
 			if(isSellOrder){
-				if(Price < (startOrderPrice - (formula * Breakeven / 100)) && stopLossLevel == 0){
+				if(price < (startOrderPrice - (formula * Breakeven / 100)) && stopLossLevel == 0){
 					stopLossLevel = 1;
 					SetStopLoss("SellOrder1", CalculationMode.Price, startOrderPrice, false);
 				}
 			}
 			else if(isBuyOrder){
-				if(Price > (startOrderPrice + (formula * Breakeven / 100)) && stopLossLevel == 0){
+				if(price > (startOrderPrice + (formula * Breakeven / 100)) && stopLossLevel == 0){
 					stopLossLevel = 1;
 					SetStopLoss("BuyOrder1", CalculationMode.Price, startOrderPrice, false);
 				}
@@ -544,86 +516,91 @@ namespace NinjaTrader.Strategy
 		}
 		
 		
-		private void BuyOrSell(double price, double lastPrice, OrderAction orderAction){
+		private void BuyOrSell(double price, double lastPrice, double currentVolume){
 
 			if (Position.MarketPosition == MarketPosition.Flat)
 			{
-
+				
 				isBuyOrder = false;
 				isSellOrder = false;
-				
 				stopLossLevel = 0;
 				
-				//foreach(DailyData dayZigZagLevelList in historyData.DailyDataList){
-					
-					//for(int i = 0; i < dayZigZagLevelList.ZigZagDiapasoneList.Count; i++){
-						if(/*IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.ZigZagDiapasoneList[i].BuyLevel) 
-							&& */(price < lowLineRSIAnalog) && orderAction == OrderAction.Buy
-							){
-							EnterLong("BuyOrder1");
-							EnterLong("BuyOrder2");
-							Print("OrderAction.Buy");
-							
-							startOrderPrice = price;
-							isBuyOrder = true;
-							
-							SetProfitTarget("BuyOrder1", CalculationMode.Ticks, ProfitTargetLarge);
-							SetProfitTarget("BuyOrder2", CalculationMode.Ticks, ProfitTargetSmall);
-							SetStopLoss("BuyOrder1",CalculationMode.Ticks, StopLoss, false);
-							SetStopLoss("BuyOrder2",CalculationMode.Ticks, StopLoss, false);
+				
+				foreach(DailyData dailyData in historyData.DailyDataList){
+
+					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
+						
+						double averageVolume = dailyData.GetAveragePriceVolume(5);
+						
+	
+						if(price > zigZag.SellLevelWithPostTicks && price < zigZag.SellZigZag){
+							if(currentVolume > averageVolume && price > highLineRSIAnalog){
+								EnterShort("SellOrder1");
+								EnterShort("SellOrder2");
+								Print("OrderAction.Sell");
 								
-							//по вершинам зигзага
-							//SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].LowZigZag - 10);
-							
-							Print("price" + price);
-							Print("lastPrice" + lastPrice);
-							//dayZigZagLevelList.ZigZagDiapasoneList[i].BuyLevel = 0;
-							//break;
+								startOrderPrice = price;
+								isSellOrder = true;
+								
+								SetProfitTarget("SellOrder1", CalculationMode.Ticks, ProfitTargetLarge);
+								SetProfitTarget("SellOrder2", CalculationMode.Ticks, ProfitTargetSmall);
+								SetStopLoss("SellOrder1",CalculationMode.Ticks, StopLoss, false);
+								SetStopLoss("SellOrder2",CalculationMode.Ticks, StopLoss, false);
+									
+								//по вершинам зигзага
+								//SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].HighZigZag + 10);
+									
+								Print("price" + price);
+								Print("lastPrice" + lastPrice);
+								zigZag.DeleteZigZagDiapasone(OrderAction.Sell);
+								break;
+							}
 						}
-					
-					else if(/*IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.ZigZagDiapasoneList[i].SellLevel)
-							&& */(price > highLineRSIAnalog) && orderAction == OrderAction.Sell
-							){
-							EnterShort("SellOrder1");
-							EnterShort("SellOrder2");
-							Print("OrderAction.Sell");
-							
-							startOrderPrice = price;
-							isSellOrder = true;
-							
-							SetProfitTarget("SellOrder1", CalculationMode.Ticks, ProfitTargetLarge);
-							SetProfitTarget("SellOrder2", CalculationMode.Ticks, ProfitTargetSmall);
-							SetStopLoss("SellOrder1",CalculationMode.Ticks, StopLoss, false);
-							SetStopLoss("SellOrder2",CalculationMode.Ticks, StopLoss, false);
+						else
+						if(price < zigZag.BuyLevelWithPostTicks && price > zigZag.BuyZigZag){
+							if(currentVolume > averageVolume && price < lowLineRSIAnalog){
+								EnterLong("BuyOrder1");
+								EnterLong("BuyOrder2");
+								Print("OrderAction.Buy");
 								
-							//по вершинам зигзага
-							//SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].HighZigZag + 10);
+								startOrderPrice = price;
+								isBuyOrder = true;
 								
-							Print("price" + price);
-							Print("lastPrice" + lastPrice);
-							//dayZigZagLevelList.ZigZagDiapasoneList[i].SellLevel = 0;
-							//break;
+								SetProfitTarget("BuyOrder1", CalculationMode.Ticks, ProfitTargetLarge);
+								SetProfitTarget("BuyOrder2", CalculationMode.Ticks, ProfitTargetSmall);
+								SetStopLoss("BuyOrder1",CalculationMode.Ticks, StopLoss, false);
+								SetStopLoss("BuyOrder2",CalculationMode.Ticks, StopLoss, false);
+									
+								//по вершинам зигзага
+								//SetStopLoss(CalculationMode.Price, dayZigZagLevelList.DailyZigZagList[i].LowZigZag - 10);
+								
+								Print("price" + price);
+								Print("lastPrice" + lastPrice);
+								zigZag.DeleteZigZagDiapasone(OrderAction.Buy);
+								break;
+							}
 						}
 					}
-				
-			/*
-					for(int i = 0; i < dayZigZagLevelList.ZigZagDiapasoneList.Count; i++){
-						if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.ZigZagDiapasoneList[i].BuyLevel)){
-							dayZigZagLevelList.ZigZagDiapasoneList[i].BuyLevel = 0;
+					
+					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
+						
+						if(price < zigZag.BuyLevelWithPostTicks && price > zigZag.BuyZigZag){
+							zigZag.DeleteZigZagDiapasone(OrderAction.Buy);
 						}
 						else 
-						if(IsPriceInOrderPeriod(price, lastPrice, dayZigZagLevelList.ZigZagDiapasoneList[i].SellLevel)){
-							dayZigZagLevelList.ZigZagDiapasoneList[i].SellLevel = 0;
+						if(price > zigZag.SellLevelWithPostTicks && price < zigZag.SellZigZag){
+							zigZag.DeleteZigZagDiapasone(OrderAction.Sell);
 						}
 					}	
-			*/
 					
-				//}
-			//}
+				}
+				
+				
+			}	
+				
 		}
 		
 
-		
 		private bool IsPriceInOrderPeriod(double price, double lastPrice, double level){
 			if((lastPrice < level && price >= level) || (lastPrice > level && price <= level)){
 				return true;
@@ -671,11 +648,11 @@ namespace NinjaTrader.Strategy
 
 			public List<ZigZagDiapasone> ZigZagDiapasoneList{get; private set;}
 			public List<OnBarData> OnBarDataList{get; private set;}
-			public DateTime DailyZigZagDateTime {get; private set;}
+			public DateTime DailyDateTime {get; private set;}
 			
 			public DailyData(DateTime dateTime)
 			{
-				DailyZigZagDateTime = dateTime;
+				DailyDateTime = dateTime;
 				ZigZagDiapasoneList = new List<ZigZagDiapasone>();
 				OnBarDataList = new List<OnBarData>();
 			}
@@ -689,26 +666,75 @@ namespace NinjaTrader.Strategy
 				return volumeAverage;
 			}
 			
-			
+			public override string ToString(){
+				return string.Format("DailyDateTime: {0}, OnBarDataList count: {1}, ZigZagDiapasoneList count: {2}", DailyDateTime, OnBarDataList.Count, ZigZagDiapasoneList.Count);
+			}
 			
 		}
 		
 		public class ZigZagDiapasone{
-			public double BuyLevel{get;set;}
-			public double SellLevel{get;set;}
-			public double HighZigZag{get;set;}
-			public double LowZigZag{get;set;}
 			
-			public double BuyLevelWithPostTicks{get; private set;}
+			private double _ticks = 0;
+			
+			private double _sellLevel = 0;
+			public double SellLevel{
+				get
+				{
+					return _sellLevel;
+				}
+				set
+				{
+					_sellLevel = value;
+					SellLevelWithPostTicks = _sellLevel - _ticks ;
+				}
+			}
+			public double SellZigZag{get;set;}
 			public double SellLevelWithPostTicks{get; private set;}
+			
+			
+			private double _buyLevel = 0;
+			public double BuyLevel{
+				get
+				{
+					return _buyLevel;
+				}
+				set
+				{	
+					_buyLevel = value;
+					BuyLevelWithPostTicks = _buyLevel + _ticks;
+				}
+			}
+			public double BuyZigZag{get;set;}
+			public double BuyLevelWithPostTicks{get; private set;}
+			
 				
-			public ZigZagDiapasone(int ticks){
-				CalculateVolumeDiapasone(ticks);
+			
+			public ZigZagDiapasone(double ticks){
+				_ticks = ticks;
+			}
+
+			public bool DeleteZigZagDiapasone(OrderAction orderAction){
+				if(orderAction == OrderAction.Buy)
+				{
+					BuyLevel = 0;
+					BuyZigZag = 0;
+					BuyLevelWithPostTicks = 0;
+					return true;
+				}
+				else
+				if(orderAction == OrderAction.Sell)
+				{
+					SellLevel = 0;
+					SellZigZag = 0;
+					SellLevelWithPostTicks = 0;
+					return true;
+				}
+				return false;	
 			}
 			
-			private void CalculateVolumeDiapasone(int ticks){
-				BuyLevelWithPostTicks = BuyLevel + ticks;
-				SellLevelWithPostTicks = SellLevel - ticks;
+			public override string ToString(){
+				return string.Format("SellLevel: {0}, SellZigZag: {1}, SellLevelWithPostTicks: {2}.   BuyLevel: {3}, BuyZigZag: {4}, BuyLevelWithPostTicks: {5}" 
+					, SellLevel, SellZigZag, SellLevelWithPostTicks, BuyLevel, BuyZigZag, BuyLevelWithPostTicks);
 			}
 			
 		}
@@ -739,6 +765,10 @@ namespace NinjaTrader.Strategy
 				}
 				return price;
 			}
+			
+			public override string ToString(){
+				return string.Format("Bar index: {0}, LargestPriceOnVolume: {1}, PriceVolumeOnBarCount: {2}", BarIndex, LargestPriceOnVolume, PriceVolumeOnBar);
+			}
 		}
 		
 		
@@ -747,7 +777,6 @@ namespace NinjaTrader.Strategy
 			public Dictionary<double, double> VolumePriceOnBar {get; private set;}
 			
 			private double _price = 0;
-			public int Size{get; private set;}
 			
 			public PriceVolume(){
 				VolumePriceOnBar = new Dictionary<double, double>();
@@ -763,11 +792,14 @@ namespace NinjaTrader.Strategy
 					VolumePriceOnBar.Add(price, volume);
 				}
 				_price = price;
-				Size = Size;
 			}
 			
 			public override string ToString(){
-				return string.Format("Price is: {0} , value is: {1}", _price, Size);
+				string text = "";
+				foreach(KeyValuePair<double, double> priceVolume in VolumePriceOnBar){
+					text = text + string.Format("Price: {0}, volume: {1}", priceVolume.Key, priceVolume.Value) + "| ";
+				}
+				return text;
 			}
 		}
 		
@@ -887,14 +919,7 @@ namespace NinjaTrader.Strategy
 			get { return procentFromMiddleValot; }
 			set { procentFromMiddleValot = Math.Max(1, value); }
 		}
-		
-		
-		private double Price {
-			get{return _price;} 
-			set{_price = value;}
-		}
-		
-		
+			
         #endregion
     }
 }

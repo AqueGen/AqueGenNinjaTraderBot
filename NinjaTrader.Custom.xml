@@ -7301,7 +7301,7 @@
             This method is used to configure the strategy and is called once before any strategy method is called.
             </summary>
         </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategy.IsZigZagChangedPosition(System.Int32,System.Int32)">
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategy.OnBarUpdate">
             <summary>
             Called on each bar update event (incoming tick)
             </summary>
