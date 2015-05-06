@@ -638,17 +638,37 @@ namespace NinjaTrader.Strategy
 					if(IsDeleteLevelsIfPriceInDiapasoneEnabled && IsWaitBarsForEnterOrder(LeftToWaitBars, indexBarEnterInDiapasone, indexBar))
 					{
 						foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
+							if(IsLevelDeleteAfterZigZagApex)
+							{
+								if(price < zigZag.BuyZigZagDiapasone.ZigZagApex && !zigZag.BuyZigZagDiapasone.IsDeleted)
+								//if(IsPriceInOrderPeriod(price, zigZag.BuyZigZagDiapasone.LevelWithPostTicks, zigZag.BuyZigZagDiapasone.ZigZagApex))
+								{
+									Log("Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
+									zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
+								}
+								else if(price > zigZag.SellZigZagDiapasone.ZigZagApex && !zigZag.SellZigZagDiapasone.IsDeleted)
+								//else if(IsPriceInOrderPeriod(price, zigZag.SellZigZagDiapasone.LevelWithPostTicks, zigZag.SellZigZagDiapasone.ZigZagApex))
+								{
+									Log("Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
+									zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
+								}
+							}
+							else
+							{
+								//if(price < zigZag.BuyZigZagDiapasone.ZigZagApex && !zigZag.BuyZigZagDiapasone.IsDeleted)
+								if(IsPriceInOrderPeriod(price, zigZag.BuyZigZagDiapasone.LevelWithPostTicks, zigZag.BuyZigZagDiapasone.ZigZagApex))
+								{
+									Log("Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
+									zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
+								}
+								//else if(price > zigZag.SellZigZagDiapasone.ZigZagApex && !zigZag.SellZigZagDiapasone.IsDeleted)
+								else if(IsPriceInOrderPeriod(price, zigZag.SellZigZagDiapasone.LevelWithPostTicks, zigZag.SellZigZagDiapasone.ZigZagApex))
+								{
+									Log("Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
+									zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
+								}
+							}
 							
-							if(price < zigZag.BuyZigZagDiapasone.ZigZagApex && !zigZag.BuyZigZagDiapasone.IsDeleted)
-							{
-								Log("Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
-								zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
-							}
-							else if(price > zigZag.SellZigZagDiapasone.ZigZagApex && !zigZag.SellZigZagDiapasone.IsDeleted)
-							{
-								Log("Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
-								zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
-							}
 						}
 					}
 				}
@@ -1306,6 +1326,10 @@ namespace NinjaTrader.Strategy
 		
 		[GridCategory("Logs")]
 		public LogType LoggerType
+		{get;set;}
+		
+		[GridCategory("Temp property")]
+		public bool IsLevelDeleteAfterZigZagApex
 		{get;set;}
 		
 		
