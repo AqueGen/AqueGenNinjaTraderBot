@@ -269,6 +269,7 @@ namespace NinjaTrader.Strategy
 				
 				onBarData = new OnBarData(CurrentBar);
 				
+				
 				Log("------Конец Обработки дефолтного таймфрейма-------");
 				Log(Time[0].ToString());
 				Log("==================================================");
