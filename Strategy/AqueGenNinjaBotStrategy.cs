@@ -169,7 +169,7 @@ namespace NinjaTrader.Strategy
 			
 			historyData = new HistoryData(SaveZigZagDaysOnHistory);
 			
-			dailyData = new DailyData(Time[0], middleValot * ProcentOfValotForNextLevel / 100, IsDeleteNextLevelsInValotDiapasoneEnabled);
+			dailyData = new DailyData(Time[0], middleValot * ProcentOfValotForNextLevel / 100);
 			zigZagDiapasone = new ZigZagDiapasone(AddTicksForOrderLevel * TickSize, CurrentBars[0], Time[0]);
 			onBarData = new OnBarData(0);
 			
@@ -306,7 +306,7 @@ namespace NinjaTrader.Strategy
 				}
 				middleValot = middleValot / DayOfSMAValot;
 				
-				dailyData = new DailyData(Time[0], middleValot * ProcentOfValotForNextLevel / 100, IsDeleteNextLevelsInValotDiapasoneEnabled);
+				dailyData = new DailyData(Time[0], middleValot * ProcentOfValotForNextLevel / 100);
 				
 				Log("Дневная валотильность: " + middleValot);
 				Log("------Конец Обработки Дневного таймфрейма-------");
@@ -586,40 +586,20 @@ namespace NinjaTrader.Strategy
 				{
 					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList)
 					{
-						//if(IsPriceInOrderPeriod(price, zigZag.SellZigZagDiapasone.LevelWithPostTicks, zigZag.SellZigZagDiapasone.ZigZagApex))
 						if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && price < zigZag.SellZigZagDiapasone.ZigZagApex)
 						{
-							if(firstEnterInDiapasone)
-							{
-								indexBarEnterInDiapasone = indexBar;
-								firstEnterInDiapasone = false;
-							}
-							
 							if(price > highLineRSIAnalog)
 							{
-								if((currentVolume > averageVolume && IsVolumeEnabled) || (!IsVolumeEnabled))
-								{
-									EnterOrders("SellOrder1", "SellOrder2", price, previousPrice, OrderAction.Sell, zigZag);
-									break;
-								}
+								EnterOrders("SellOrder1", "SellOrder2", price, previousPrice, OrderAction.Sell, zigZag);
+								break;
 							}
 						}
-						//else if(IsPriceInOrderPeriod(price, zigZag.BuyZigZagDiapasone.LevelWithPostTicks, zigZag.BuyZigZagDiapasone.ZigZagApex))
 						else if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && price > zigZag.BuyZigZagDiapasone.ZigZagApex)
 						{
-							if(firstEnterInDiapasone)
-							{
-								indexBarEnterInDiapasone = indexBar;
-								firstEnterInDiapasone = false;
-							}
-							
 							if(price < lowLineRSIAnalog)
 							{
-								if((currentVolume > averageVolume && IsVolumeEnabled) || (!IsVolumeEnabled))
-								{
-									EnterOrders("BuyOrder1", "BuyOrder2", price, previousPrice, OrderAction.Buy, zigZag);
-									break;
-								}
+								EnterOrders("BuyOrder1", "BuyOrder2", price, previousPrice, OrderAction.Buy, zigZag);
+								break;
 							}
 						}
 					}
@@ -627,27 +607,20 @@ namespace NinjaTrader.Strategy
 				
 				if(IsDeleteLevelsIfPriceInDiapasoneEnabled)  
 				{
-					if((IsWaitBarsForEnterOrder(LeftToWaitBars, indexBarEnterInDiapasone, indexBar) && IsVolumeEnabled) || !IsVolumeEnabled)
+					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList)
 					{
-						foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList)
+						if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && !zigZag.BuyZigZagDiapasone.IsDeleted)
 						{
-							if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && !zigZag.BuyZigZagDiapasone.IsDeleted)
-							//if(IsPriceInOrderPeriod(price, zigZag.BuyZigZagDiapasone.LevelWithPostTicks, zigZag.BuyZigZagDiapasone.ZigZagApex))
-							{
-								Log("Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
-								zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
-								Log("После Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
-							}
-							else if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && !zigZag.SellZigZagDiapasone.IsDeleted)
-							//else if(IsPriceInOrderPeriod(price, zigZag.SellZigZagDiapasone.LevelWithPostTicks, zigZag.SellZigZagDiapasone.ZigZagApex))
-							{
-								Log("Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
-								zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
-								Log("После Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
-							}
-							
-							
+							Log("Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
+							zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
+							Log("После Удаление уровня на покупку: " + zigZag.BuyZigZagDiapasone.ToString());
 						}
+						else if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && !zigZag.SellZigZagDiapasone.IsDeleted)
+						{
+							Log("Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
+							zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
+							Log("После Удаление уровня на продажу: " + zigZag.SellZigZagDiapasone.ToString());
+						}	
 					}
 				}
 					
@@ -1032,7 +1005,7 @@ namespace NinjaTrader.Strategy
 		
 		public class OnBarData
 		{
-			public PriceVolume PriceVolumeOnBar{get; private set;}
+			//public PriceVolume PriceVolumeOnBar{get; private set;}
 			public int BarIndex{get;private set;}
 
 			public OnBarData(int index)
@@ -1062,7 +1035,7 @@ namespace NinjaTrader.Strategy
 			}
 		}
 		
-		
+		/*
 		public class PriceVolume
 		{
 			public Dictionary<double, double> VolumePriceOnBar {get; private set;}	
@@ -1098,7 +1071,7 @@ namespace NinjaTrader.Strategy
 				return text;
 			}
 		}
-		
+		*/
 		
 		public class Logger
 		{
@@ -1287,26 +1260,13 @@ namespace NinjaTrader.Strategy
             set { addTicksForOrderLevel = value; }
         }
 		
-		
-		[GridCategory("Conditions")]
-		public bool IsVolumeEnabled
-		{
-			get { return isVolumeEnabled; }
-			set { isVolumeEnabled = value; }
-		}
+	
 		
 		[GridCategory("Conditions")]
 		public bool IsDeleteLevelsIfPriceInDiapasoneEnabled
 		{
 			get { return isDeleteLevelsIfPriceInDiapasoneEnabled; }
 			set { isDeleteLevelsIfPriceInDiapasoneEnabled = value; }
-		}
-		
-		[GridCategory("Conditions")]
-		public bool IsDeleteNextLevelsInValotDiapasoneEnabled
-		{
-			get { return isDeleteNextLevelsInValotDiapasoneEnabled; }
-			set { isDeleteNextLevelsInValotDiapasoneEnabled = value; }
 		}
 		
 		[GridCategory("Logs")]
