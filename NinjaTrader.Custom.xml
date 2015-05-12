@@ -7301,84 +7301,17 @@
             This method is used to configure the strategy and is called once before any strategy method is called.
             </summary>
         </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategy.OnBarUpdate">
-            <summary>
-            Called on each bar update event (incoming tick)
-            </summary>
-        </member>
-        <member name="T:NinjaTrader.Strategy.AqueGenNinjaTickBot">
+        <member name="T:NinjaTrader.Strategy.AqueGenNinjaBotStrategyV2">
             <summary>
             Enter the description of your strategy here
             </summary>
         </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaTickBot.Initialize">
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategyV2.Initialize">
             <summary>
             This method is used to configure the strategy and is called once before any strategy method is called.
             </summary>
         </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaTickBot.OnBarUpdate">
-            <summary>
-            Called on each bar update event (incoming tick)
-            </summary>
-        </member>
-        <member name="T:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag">
-            <summary>
-            Enter the description of your strategy here
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag.Initialize">
-            <summary>
-            This method is used to configure the strategy and is called once before any strategy method is called.
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaReCodeZigZag.IsZigZagChangedPosition(System.Int32,System.Int32)">
-            <summary>
-            Called on each bar update event (incoming tick)
-            </summary>
-        </member>
-        <member name="T:NinjaTrader.Strategy.LevelsStrategy">
-            <summary>
-            Enter the description of your strategy here
-            </summary>
-            
-        </member>
-        <member name="M:NinjaTrader.Strategy.LevelsStrategy.Initialize">
-            <summary>
-            This method is used to configure the strategy and is called once before any strategy method is called.
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.LevelsStrategy.GetActualTime">
-            <summary>
-            Called on each bar update event (incoming tick)
-            </summary>
-            
-        </member>
-        <member name="T:NinjaTrader.Strategy.MyCustomStrategy">
-            <summary>
-            Enter the description of your strategy here
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.MyCustomStrategy.Initialize">
-            <summary>
-            This method is used to configure the strategy and is called once before any strategy method is called.
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.MyCustomStrategy.OnBarUpdate">
-            <summary>
-            Called on each bar update event (incoming tick)
-            </summary>
-        </member>
-        <member name="T:NinjaTrader.Strategy.SampleDataSeries">
-            <summary>
-            Sample demonstrates how to make DataSeries objects synced to different bar periods.
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.SampleDataSeries.Initialize">
-            <summary>
-            This method is used to configure the strategy and is called once before any strategy method is called.
-            </summary>
-        </member>
-        <member name="M:NinjaTrader.Strategy.SampleDataSeries.OnBarUpdate">
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategyV2.OnBarUpdate">
             <summary>
             Called on each bar update event (incoming tick)
             </summary>
