@@ -25,7 +25,7 @@ namespace NinjaTrader.Strategy
     /// Enter the description of your strategy here
     /// </summary>
     [Description("Enter the description of your strategy here")]
-    public class AqueGenNinjaBotStrategy : Strategy
+    public class AqueGenNinjaBotStrategyOLD : Strategy
     {
         //#region Variables
         // Wizard generated variables
@@ -647,7 +647,7 @@ namespace NinjaTrader.Strategy
 			{
 				if(IsPriceAwayEnabled && orderIndexBar < indexBar && !isStopLossOutOfApex)
 				{
-					if(((startOrderPrice > price + PriceAway * TickSize) && isSellOrder) || ((startOrderPrice < price - PriceAway * TickSize) && isBuyOrder))
+					if(((startOrderPrice >= price + PriceAway * TickSize) && isSellOrder) || ((startOrderPrice <= price - PriceAway * TickSize) && isBuyOrder))
 					{
 						if(isSellOrder)
 						{
@@ -676,7 +676,7 @@ namespace NinjaTrader.Strategy
 					double formula = ProfitTargetLarge * TickSize;
 					if(isSellOrder)
 					{
-						if(price < (startOrderPrice - (formula * Breakeven / 100)))
+						if(price <= (startOrderPrice - (formula * Breakeven / 100)))
 						{
 							isStopLossOutOfApex = true;
 							SetStopLoss("SellOrder1", CalculationMode.Price, startOrderPrice, false);
@@ -685,7 +685,7 @@ namespace NinjaTrader.Strategy
 					}
 					else if(isBuyOrder)
 					{
-						if(price > (startOrderPrice + (formula * Breakeven / 100)))
+						if(price >= (startOrderPrice + (formula * Breakeven / 100)))
 						{
 							isStopLossOutOfApex = true;
 							SetStopLoss("BuyOrder1", CalculationMode.Price, startOrderPrice, false);
@@ -813,8 +813,6 @@ namespace NinjaTrader.Strategy
 				return string.Format("СтопЛосс за вершину -> СтопЛосс: {0}, Цена вершины: {1}, Добавить к вершине: {2}, Тип ордера: {3}"
 					, StopLossPrice, Apex, PriceAdd, orderType);
 			}
-			
-			
 		}
 		
 		
