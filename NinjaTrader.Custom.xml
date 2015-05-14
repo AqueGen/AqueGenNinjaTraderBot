@@ -7291,12 +7291,12 @@
             Called on each bar update event (incoming tick)
             </summary>
         </member>
-        <member name="T:NinjaTrader.Strategy.AqueGenNinjaBotStrategy">
+        <member name="T:NinjaTrader.Strategy.AqueGenNinjaBotStrategyOLD">
             <summary>
             Enter the description of your strategy here
             </summary>
         </member>
-        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategy.Initialize">
+        <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategyOLD.Initialize">
             <summary>
             This method is used to configure the strategy and is called once before any strategy method is called.
             </summary>
