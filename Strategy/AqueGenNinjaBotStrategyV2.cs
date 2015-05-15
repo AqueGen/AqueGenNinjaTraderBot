@@ -127,6 +127,18 @@ namespace NinjaTrader.Strategy
 		private Logger logger;
 
 		
+		
+		//test
+		private ExitOrders exitOrders;
+		
+		private double exitLongStopLoss = -1;
+		private double exitShortStopLoss = -1;
+		
+		private double exitLongProfitLarge = -1;
+		private double exitLongProfitSmall = -1;
+		private double exitShortProfitLarge = -1;
+		private double exitShortProfitSmall = -1;
+		
         /// <summary>
         /// This method is used to configure the strategy and is called once before any strategy method is called.
         /// </summary>
@@ -534,20 +546,20 @@ namespace NinjaTrader.Strategy
 				currentOrder = CurrentOrder.FLAT;
 				isStopLossOutOfApex = false;
 				
-				foreach(DailyData dailyData in historyData.DailyDataList){
-
-					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
+				foreach(DailyData dailyData in historyData.DailyDataList)
+				{
+					foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList)
+					{
 
 						if(currentOrder == CurrentOrder.FLAT)
 						{
 							if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && !zigZag.SellZigZagDiapasone.IsDeleted && price > highLineRSIAnalog)
 							{
-								Log("zigZag.AddedDateTime.Day " + zigZag.AddedDateTime.Day);
-								Log("<");
-								Log("Time[0].Day" + Time[0].Day);
 								Log("Были ВОООБЩе уровни:");
-								foreach(DailyData dailyData1 in historyData.DailyDataList){
-									foreach(ZigZagDiapasone zigZag1 in dailyData1.ZigZagDiapasoneList){
+								foreach(DailyData dailyData1 in historyData.DailyDataList)
+								{
+									foreach(ZigZagDiapasone zigZag1 in dailyData1.ZigZagDiapasoneList)
+									{
 										Log(zigZag1.ToString());
 									}
 								}
@@ -556,17 +568,15 @@ namespace NinjaTrader.Strategy
 								startOrderPrice = price;
 								currentOrder = CurrentOrder.SELL;
 								EnterOrders("SellOrder1", "SellOrder2", price, previousPrice, OrderAction.SELL, zigZag);
-								break;
 							}
 							else
 							if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && !zigZag.BuyZigZagDiapasone.IsDeleted && price < lowLineRSIAnalog)
 							{
-								Log("zigZag.AddedDateTime.Day " + zigZag.AddedDateTime.Day);
-								Log("<");
-								Log("Time[0].Day" + Time[0].Day);
 								Log("Были ВОООБЩе уровни:");
-								foreach(DailyData dailyData1 in historyData.DailyDataList){
-									foreach(ZigZagDiapasone zigZag1 in dailyData1.ZigZagDiapasoneList){
+								foreach(DailyData dailyData1 in historyData.DailyDataList)
+								{
+									foreach(ZigZagDiapasone zigZag1 in dailyData1.ZigZagDiapasoneList)
+									{
 										Log(zigZag1.ToString());
 									}
 								}
@@ -575,7 +585,6 @@ namespace NinjaTrader.Strategy
 								startOrderPrice = price;
 								currentOrder = CurrentOrder.BUY;
 								EnterOrders("BuyOrder1", "BuyOrder2", price, previousPrice, OrderAction.BUY, zigZag);
-								break;
 							}
 						}
 						else
@@ -588,32 +597,40 @@ namespace NinjaTrader.Strategy
 			}	
 			else 
 			{
+
 				if(PriceAwaySwitch == Switch.ON && orderIndexBar < indexBar && !isStopLossOutOfApex)
 				{
-					
 					if((startOrderPrice > price + PriceAway * TickSize) && currentOrder == CurrentOrder.SELL)
 					{
 						isStopLossOutOfApex = true;
 						stopLossOutOfApex = new StopLossOutOfApex(previousHighBarApex, PriceAway * TickSize, OrderAction.SELL);
-						
-						Log("startOrderBar " + startBar);
-						Log("startOrderPrice " + startOrderPrice);
-						Log(stopLossOutOfApex.ToString());
-						
-						SetStopLoss("SellOrder1", CalculationMode.Price, stopLossOutOfApex.StopLossPrice + (2 * TickSize), false);
-						SetStopLoss("SellOrder2", CalculationMode.Price, stopLossOutOfApex.StopLossPrice + (2 * TickSize), false);
+								
+						if(RealTime == Switch.ON)
+						{
+							SetStopLoss("SellOrder1", CalculationMode.Price, stopLossOutOfApex.StopLossPrice + (2 * TickSize), false);
+							SetStopLoss("SellOrder2", CalculationMode.Price, stopLossOutOfApex.StopLossPrice + (2 * TickSize), false);
+						}
+						else if(RealTime == Switch.OFF)
+						{
+							exitOrders.StopLoss = stopLossOutOfApex.StopLossPrice + (2 * TickSize);	
+						}
 					}	
 					else if((startOrderPrice < price - PriceAway * TickSize) && currentOrder == CurrentOrder.BUY)
 					{
 						isStopLossOutOfApex = true;
 						stopLossOutOfApex = new StopLossOutOfApex(previousLowBarApex, PriceAway * TickSize, OrderAction.BUY);
-						
-						Log(stopLossOutOfApex.ToString());
-						
-						SetStopLoss("BuyOrder1", CalculationMode.Price, stopLossOutOfApex.StopLossPrice - (2 * TickSize), false);
-						SetStopLoss("BuyOrder2", CalculationMode.Price, stopLossOutOfApex.StopLossPrice - (2 * TickSize), false);
-					}
 					
+						if(RealTime == Switch.ON)
+						{
+							SetStopLoss("BuyOrder1", CalculationMode.Price, stopLossOutOfApex.StopLossPrice - (2 * TickSize), false);
+							SetStopLoss("BuyOrder2", CalculationMode.Price, stopLossOutOfApex.StopLossPrice - (2 * TickSize), false);
+						}
+						else if(RealTime == Switch.OFF)
+						{
+							exitOrders.StopLoss = stopLossOutOfApex.StopLossPrice - (2 * TickSize);
+						}
+					}
+						
 				}
 				
 				if(BreakevenSwitch == Switch.ON)
@@ -625,9 +642,17 @@ namespace NinjaTrader.Strategy
 						if(price < (startOrderPrice - (formula * Breakeven / 100)))
 						{
 							isStopLossOutOfApex = true;
-							SetStopLoss("SellOrder1", CalculationMode.Price, startOrderPrice, false);
-							SetStopLoss("SellOrder2", CalculationMode.Price, startOrderPrice, false);
 							currentStopLoss = startOrderPrice;
+							
+							if(RealTime == Switch.ON)
+							{
+								SetStopLoss("SellOrder1", CalculationMode.Price, startOrderPrice, false);
+								SetStopLoss("SellOrder2", CalculationMode.Price, startOrderPrice, false);
+							}
+							else if(RealTime == Switch.OFF)
+							{
+								exitOrders.StopLoss = startOrderPrice;
+							}
 						}
 					}
 					else if(currentOrder == CurrentOrder.BUY)
@@ -635,25 +660,69 @@ namespace NinjaTrader.Strategy
 						if(price > (startOrderPrice + (formula * Breakeven / 100)))
 						{
 							isStopLossOutOfApex = true;
-							SetStopLoss("BuyOrder1", CalculationMode.Price, startOrderPrice, false);
-							SetStopLoss("BuyOrder2", CalculationMode.Price, startOrderPrice, false);
 							currentStopLoss = startOrderPrice;
+							if(RealTime == Switch.ON)
+							{
+								SetStopLoss("BuyOrder1", CalculationMode.Price, startOrderPrice, false);
+								SetStopLoss("BuyOrder2", CalculationMode.Price, startOrderPrice, false);
+							}
+							else if(RealTime == Switch.OFF)
+							{
+								exitOrders.StopLoss = startOrderPrice;
+							}
 						}
+					}
+				}
+					
+					
+				if(RealTime == Switch.OFF)
+				{
+					if(price <= exitOrders.SmallProfitTarget && currentOrder == CurrentOrder.SELL)
+					{
+						ExitShort("ExitShort1", "SellOrder1");
+					}
+					if(price <= exitOrders.LargeProfitTarget && currentOrder == CurrentOrder.SELL)
+					{
+						ExitShort("ExitShort2", "SellOrder2");
+					}
+					
+					if(price >= exitOrders.SmallProfitTarget && currentOrder == CurrentOrder.BUY)
+					{
+						ExitLong("ExitLong1", "BuyOrder1");
+					}
+					if(price >= exitOrders.LargeProfitTarget && currentOrder == CurrentOrder.BUY)
+					{
+						ExitLong("ExitLong2", "BuyOrder2");
+					}
+					
+					if(price >= exitOrders.StopLoss && currentOrder == CurrentOrder.SELL)
+					{
+						ExitShort("ExitShort1", "SellOrder1");
+						ExitShort("ExitShort2", "SellOrder2");
+					}
+
+					if(price <= exitOrders.StopLoss && currentOrder == CurrentOrder.BUY)
+					{
+						ExitLong("ExitLong1", "BuyOrder1");
+						ExitLong("ExitLong2", "BuyOrder2");
 					}
 				}
 			}
 			
-			foreach(DailyData dailyData in historyData.DailyDataList){
-				foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList){
+			foreach(DailyData dailyData in historyData.DailyDataList)
+			{
+				foreach(ZigZagDiapasone zigZag in dailyData.ZigZagDiapasoneList)
+				{
 					
-					if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && !zigZag.BuyZigZagDiapasone.IsDeleted){
+					if(price < zigZag.BuyZigZagDiapasone.LevelWithPostTicks && !zigZag.BuyZigZagDiapasone.IsDeleted)
+					{
 						zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
 					}
-					else 
-					if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && !zigZag.SellZigZagDiapasone.IsDeleted){
+					else if(price > zigZag.SellZigZagDiapasone.LevelWithPostTicks && !zigZag.SellZigZagDiapasone.IsDeleted)
+					{
 						zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
 					}
-				}	
+				}
 			}
 		}
 				
@@ -669,13 +738,13 @@ namespace NinjaTrader.Strategy
 					EnterLong(1, 1, order2);
 					
 					Log("OrderAction.Buy");
+					exitOrders = new ExitOrders(price, StopLoss, ProfitTargetLarge, ProfitTargetSmall, OrderAction.BUY, TickSize);
 					
 					currentOrder = CurrentOrder.BUY;
 
 					Log("Before level delete -> " + zigZag.ToString(OrderAction.BUY));
 					zigZag.BuyZigZagDiapasone.DeleteZigZagDiapasone();
 					Log("After level delete -> " + zigZag.ToString(OrderAction.BUY));
-
 				}
 				else if(orderAction == OrderAction.SELL)
 				{
@@ -683,19 +752,33 @@ namespace NinjaTrader.Strategy
 					EnterShort(1, 1, order2);
 					
 					Log("OrderAction.Sell");
+					exitOrders = new ExitOrders(price, StopLoss, ProfitTargetLarge, ProfitTargetSmall, OrderAction.SELL, TickSize);
 					
 					currentOrder = CurrentOrder.SELL;
 					
 					Log("Before level delete -> " + zigZag.ToString(OrderAction.SELL));
 					zigZag.SellZigZagDiapasone.DeleteZigZagDiapasone();
 					Log("After level delete -> " + zigZag.ToString(OrderAction.SELL));
+					
 				}	
 				
+				/*
 				SetProfitTarget(order1, CalculationMode.Ticks, ProfitTargetLarge);
 				SetProfitTarget(order2, CalculationMode.Ticks, ProfitTargetSmall);
 				SetStopLoss(order1,CalculationMode.Ticks, StopLoss, false);
 				SetStopLoss(order2,CalculationMode.Ticks, StopLoss, false);
-					
+				
+
+
+				
+				Log("EnterOrder step " + Time[0]);
+				Log("EnterOrder exitLongStopLoss " + exitLongStopLoss);
+				Log("EnterOrder exitShortStopLoss " + exitShortStopLoss);
+				Log("EnterOrder exitLongProfitLarge " + exitLongProfitLarge);
+				Log("EnterOrder exitLongProfitSmall " + exitLongProfitSmall);
+				Log("EnterOrder exitShortProfitLarge " + exitShortProfitLarge);
+				Log("EnterOrder exitShortProfitSmall " + exitShortProfitSmall);
+					*/
 			}
 		}
 		
@@ -726,6 +809,50 @@ namespace NinjaTrader.Strategy
 		
 		
 		#region Data Objects and Lists
+		
+		public class ExitOrders
+		{
+			public double StopLoss {get; set;}
+			public double SmallProfitTarget {get; set;}
+			public double LargeProfitTarget {get; set;}
+			
+			public OrderAction GetOrderAction ()
+			{
+				return _orderAction;
+			}
+			
+			private double _startOrderPriceTick;
+			private double _stopLossTick;
+			private double _largeProfitTargetTick;
+			private double _smallProfitTargetTick;
+			private OrderAction _orderAction; 
+			private double _tickSize;
+				
+			public ExitOrders(double startOrderPrice, double stopLossTick, double largeProfitTargetTick, double smallProfitTargetTick, OrderAction orderAction, double tickSize)
+			{
+				_startOrderPriceTick = startOrderPrice;
+				_stopLossTick = stopLossTick;
+				_largeProfitTargetTick = largeProfitTargetTick;
+				_smallProfitTargetTick = smallProfitTargetTick;
+				_orderAction = orderAction;
+				_tickSize = tickSize;
+				
+				if(orderAction == OrderAction.BUY)
+				{
+					StopLoss = startOrderPrice - stopLossTick * tickSize;
+					SmallProfitTarget = startOrderPrice + smallProfitTargetTick * tickSize;
+					LargeProfitTarget = startOrderPrice + largeProfitTargetTick * tickSize;
+				}
+				else if(orderAction == OrderAction.SELL)
+				{
+					StopLoss = startOrderPrice + stopLossTick * tickSize;
+					SmallProfitTarget = startOrderPrice - smallProfitTargetTick * tickSize;
+					LargeProfitTarget = startOrderPrice - largeProfitTargetTick * tickSize;
+				}
+				
+			}
+		}
+		
 		
 		public class HistoryData{
 
