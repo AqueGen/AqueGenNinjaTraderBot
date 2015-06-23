@@ -7291,6 +7291,82 @@
             Called on each bar update event (incoming tick)
             </summary>
         </member>
+        <member name="T:NinjaTrader.Strategy.AGNSReversBar">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBar.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBar.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
+        <member name="T:NinjaTrader.Strategy.AGNSReversBarCCI">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBarCCI.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBarCCI.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
+        <member name="T:NinjaTrader.Strategy.AGNSReversBarEMA">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBarEMA.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSReversBarEMA.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
+        <member name="T:NinjaTrader.Strategy.AGNSUnirenkoLimits">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSUnirenkoLimits.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGNSUnirenkoLimits.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+            
+        </member>
+        <member name="T:NinjaTrader.Strategy.AGZigZagOrders">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGZigZagOrders.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.AGZigZagOrders.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
         <member name="T:NinjaTrader.Strategy.AqueGenNinjaBotStrategyOLD">
             <summary>
             Enter the description of your strategy here
@@ -7312,6 +7388,21 @@
             </summary>
         </member>
         <member name="M:NinjaTrader.Strategy.AqueGenNinjaBotStrategyV2.OnBarUpdate">
+            <summary>
+            Called on each bar update event (incoming tick)
+            </summary>
+        </member>
+        <member name="T:NinjaTrader.Strategy.CCIStrategy">
+            <summary>
+            Enter the description of your strategy here
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.CCIStrategy.Initialize">
+            <summary>
+            This method is used to configure the strategy and is called once before any strategy method is called.
+            </summary>
+        </member>
+        <member name="M:NinjaTrader.Strategy.CCIStrategy.OnBarUpdate">
             <summary>
             Called on each bar update event (incoming tick)
             </summary>
