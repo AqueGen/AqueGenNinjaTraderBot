@@ -7352,6 +7352,12 @@
             </summary>
             
         </member>
+        <member name="M:NinjaTrader.Strategy.AGNSUnirenkoLimits.OnMarketData(NinjaTrader.Data.MarketDataEventArgs)">
+            <summary>
+            OnMarketData
+            </summary>
+            <param name="e"></param>
+        </member>
         <member name="T:NinjaTrader.Strategy.AGZigZagOrders">
             <summary>
             Enter the description of your strategy here

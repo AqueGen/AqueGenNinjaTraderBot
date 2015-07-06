@@ -92,6 +92,10 @@ namespace NinjaTrader.Indicator
 			double rsi	  = avgDown[0] == 0 ? 100 : 100 - 100 / (1 + avgUp[0] / avgDown[0]);
 			double rsiAvg = (2.0 / (1 + Smooth)) * rsi + (1 - (2.0 / (1 + Smooth))) * Avg[1];
 
+			Print("rsi " + rsi);
+			Print("rsiAvg " + rsiAvg);
+			
+			
 			Avg.Set(rsiAvg);
 			Value.Set(rsi);
 		}
